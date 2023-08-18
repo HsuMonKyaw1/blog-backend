@@ -1,0 +1,38 @@
+from flask import Flask
+from pymongo import MongoClient
+from mongoengine import Document, StringField, EmailField, ReferenceField, DateTimeField,IntField
+
+app = Flask(__name__)
+
+# Replace 'your_mongodb_uri' and 'your_database_name' with your MongoDB configurations
+mongodb_uri = 'mongodb+srv://hsumonk001:hsumonkyaw12345@cluster0.nzi4wje.mongodb.net/?retryWrites=true&w=majority'
+client = MongoClient(mongodb_uri)
+db = client.social_platform 
+
+# Initialize the database with your Flask app
+# db.init_app(app)
+
+# User model
+class User(Document):
+    username = StringField(required=True, unique=True, max_length=50)
+    email = EmailField(required=True, unique=True)
+    password = StringField(required=True)
+
+# Post model
+class Post(Document):
+    content = StringField(required=True)
+    author = ReferenceField(User, required=True)
+    date_of_creation= DateTimeField()
+    like_count = IntField(default=0)
+    comment_count = IntField(default=0)
+
+# Comment model
+class Comment(Document):
+    content = StringField(required=True)
+    author = ReferenceField(User, required=True)
+    post = ReferenceField(Post, required=True)
+    date_of_creation= DateTimeField()
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
