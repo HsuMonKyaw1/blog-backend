@@ -3,6 +3,7 @@ from mongoengine import connect
 from pymongo import MongoClient
 
 app = Flask(__name__)
+app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
 
 app.config['MONGODB_SETTINGS'] = {
     'db': 'social_platform',

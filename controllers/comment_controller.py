@@ -1,46 +1,102 @@
-import datetime
-from flask import Blueprint,jsonify,request
-from mongoengine import Document, StringField, EmailField, ReferenceField, DateTimeField,IntField
-from controllers.user_controller import User
-from controllers.post_controller import Post
+from datetime import datetime
+from flask import Blueprint,jsonify,request,session
+from models.mymodel import User,Post,Comment
+from auth import login_required
 comment_bp = Blueprint('comment', __name__)
 
-# Comment model
-class Comment(Document):
-    content = StringField(required=True)
-    user_id = ReferenceField(User, required=True)
-    post_id = ReferenceField(Post, required=True)
-    date_of_creation= DateTimeField()
-
-@comment_bp.route('/comments',methods=['POST'])
-def create_comment(post_id):
-    data = request.json
-    content = data.get('content')
-    user_id = data.get('user_id')  # Assuming you're sending the user's ID in the request
-    
-    if not content or not user_id:
-        return jsonify({"error": "Content and user_id are required"}), 400
-
+@comment_bp.route('/comments', methods=['POST'])
+@login_required  # Apply the login_required decorator
+def create_comment():
     try:
-        user = User.objects.get(id=user_id)
-        new_post = Post(content=content, user=user, date_of_creation=datetime.now())
-        new_post.save()
-        
-        return jsonify({"message": "Post created successfully"}), 201
-    except User.DoesNotExist:
-         return jsonify({"error": "user not found"}), 404
-    
+        # Get the data from the request JSON
+        data = request.get_json()
 
-@comment_bp.route('/comments/<post_id>',methods=['DELETE'])
-def delete_comment(post_id):
-    data = request.json
-    content = data.get('content')
-    user_id = data.get('user_id')
-    post_id=data.get('id')
+        # Extract the post_id and comment_text from the data
+        post_id = data.get('post_id')
+        text = data.get('text')
 
-    try:
+        # Retrieve the Post instance based on post_id
         post = Post.objects.get(id=post_id)
-        post.delete()
-        return jsonify({"message": "Post deleted successfully"}), 200
+
+        # Get the authenticated user from the session
+        user_id = session.get('user_id')
+
+        if user_id:
+            # Retrieve the authenticated user
+            user = User.objects.get(id=user_id)
+
+            # Create a new Comment and associate it with the User and Post
+            new_comment = Comment(
+                text=text,
+                user=user,
+                post=post,
+                date_of_creation=datetime.now()
+            )
+            new_comment.save()
+
+            # Return a success response
+            return jsonify({'message': 'Comment created successfully'}), 201
+        else:
+            return jsonify({'error': 'User not authenticated'}), 401
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+  
+@comment_bp.route('/comments/<comment_id>', methods=['DELETE'], endpoint='delete_comment')
+@login_required  # Apply the login_required decorator
+def delete_comment(comment_id):
+    try:
+        data = request.json
+        comment=data.get('comment_id')
+        comment = Comment.objects.get(id=comment_id)
+
+        user_id = session.get('user_id')
+        if user_id:
+            # Retrieve the authenticated user
+            user = User.objects.get(id=user_id)
+            # Check if the authenticated user is the author of the comment or has appropriate permissions
+            if comment.user == user:
+            # Delete the comment
+             comment.delete()
+
+            # Return a success response
+            return jsonify({'message': 'Comment deleted successfully'})
+
+        return jsonify({'error': 'Unauthorized to delete this comment'}), 403
+
+    except Comment.DoesNotExist:
+        return jsonify({'error': 'Comment not found'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@comment_bp.route('/comments/<post_id>', methods=['GET'])
+def get_comments_by_post_id(post_id):
+    try:
+        data = request.json
+        post=data.get('post_id')
+        post = Post.objects.get(id=post_id)
+
+        # Query comments associated with the post
+        comments = Comment.objects(post=post)
+
+        # Create a list to store comment data
+        comment_list = []
+
+        # Iterate through the comments and retrieve relevant information
+        for comment in comments:
+            comment_data = {
+                'comment_id': str(comment.id),
+                'text': comment.text,
+                'user_id': str(comment.user.id),
+                'date_of_creation': comment.date_of_creation.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            comment_list.append(comment_data)
+
+        return jsonify(comment_list)
+
     except Post.DoesNotExist:
-        return jsonify({"error": "Post not found"}), 404
+        return jsonify({'error': 'Post not found'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
