@@ -4,6 +4,8 @@ from models.mymodel import User
 user_bp = Blueprint('user', __name__)
 
 from app import db
+
+#get_all_users
 @user_bp.route('/users',methods=['GET'])
 def index():
     users = User.objects.all()
@@ -22,6 +24,7 @@ def index():
         user_list.append(user_data)
     return jsonify(user_list)
 
+#register_user
 @user_bp.route('/register', methods=['POST'])
 def register_user():
     # Get registered user input
@@ -45,22 +48,20 @@ def register_user():
     existing_email = User.objects(email=email).first()
     if existing_email:
         return jsonify({'message': 'Email is already in use'}), 409
-      # Create a new user record
+    # Create a new user record
     new_user = User(
         username=username,
         email=email,
         password=password,
-        profile_info=profile_info  # Include the profile_info object field
+        profile_info=profile_info 
     )
-
-    # Save the new user record to the database
     new_user.save()
 
     return jsonify({'message': 'User registered successfully'}), 201
 
+#user_login
 @user_bp.route('/login', methods=['POST'])
 def login():
-
     data = request.get_json()
 
     # Validate the user input
@@ -80,23 +81,22 @@ def login():
 
     return jsonify({'error': 'Invalid credentials'}), 401
 
+#user_logout
 @user_bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     return jsonify({'message': 'Logout successful'})
 
-@user_bp.route('/profile', methods=['GET', 'POST', 'PUT'])
-def user_profile():
-      # Find the user by username
+#user_profile
+@user_bp.route('/profile/<user_id>', methods=['GET', 'POST', 'PUT'])
+def user_profile(user_id):
+    # Find the user by username
     data = request.get_json()
-    user_id = session.get('user_id')
-    if user_id:
-     user = User.objects(username=data['username']).first()
-
-     if not user:
+    user = User.objects(id=user_id).first()
+    if not user:
         return jsonify({'message': 'User not found'}), 404
 
-     if request.method == 'GET':
+    if request.method == 'GET':
          # Return user profile data
         profile_data = {
             'id': str(user.id),
@@ -110,29 +110,33 @@ def user_profile():
         }
         return jsonify(profile_data)
 
-     elif request.method == 'PUT':
+    elif request.method == 'PUT':
            data = request.get_json()
 
-          # Update user profile data
+          # Update user profile data      
+           if 'username' in data:
+            user.username = data['username']
            if 'email' in data:
             user.email = data['email']
            if 'password' in data:
             user.password = data['password']
-
+           if 'profile_picture' in data:
+            user.profile_info.profile_picture= data['profile_picture']
+           if 'bio' in data:
+            user.profile_info.bio = data['bio']
+           if 'name' in data:
+            user.profile_info.name= data['name']
+           
            user.save()  # Save the updated user record
  
            return jsonify({'message': 'Profile updated successfully'})
-    
+#get_user_by_id  
 @user_bp.route('/users/<user_id>', methods=['GET'])
 def get_user_by_id(user_id):
-    # Retrieve user information by user_id
-    print(user_id)
     user = User.objects(id=user_id).first()
 
     if not user:
         return jsonify({'message': 'User not found'}), 404
-
-    # Return user data
     user_data = {
         'id': str(user.id),
             'username': user.username,
@@ -146,17 +150,15 @@ def get_user_by_id(user_id):
 
     return jsonify(user_data)
 
+#get_user_by_username
 @user_bp.route('/users/<username>', methods=['GET'])
 def get_user_by_username(username):
-    # Retrieve user information by username
     user = User.objects(username=username).first()
 
     if not user:
         return jsonify({'message': 'User not found'}), 404
-
-    # Return user data
     user_data = {
-  'id': str(user.id),
+    'id': str(user.id),
             'username': user.username,
             'email': user.email,
             'profile_info': {
@@ -165,6 +167,5 @@ def get_user_by_username(username):
                 'name': user.profile_info.name if user.profile_info else None
             }
     }
-
     return jsonify(user_data)
 

@@ -4,28 +4,20 @@ from models.mymodel import User,Post,Comment
 from auth import login_required
 comment_bp = Blueprint('comment', __name__)
 
+#comment_create
 @comment_bp.route('/comments', methods=['POST'])
-@login_required  # Apply the login_required decorator
+@login_required 
 def create_comment():
     try:
-        # Get the data from the request JSON
         data = request.get_json()
-
-        # Extract the post_id and comment_text from the data
         post_id = data.get('post_id')
         text = data.get('text')
 
-        # Retrieve the Post instance based on post_id
         post = Post.objects.get(id=post_id)
-
-        # Get the authenticated user from the session
         user_id = session.get('user_id')
 
         if user_id:
-            # Retrieve the authenticated user
             user = User.objects.get(id=user_id)
-
-            # Create a new Comment and associate it with the User and Post
             new_comment = Comment(
                 text=text,
                 user=user,
@@ -33,17 +25,16 @@ def create_comment():
                 date_of_creation=datetime.now()
             )
             new_comment.save()
-
-            # Return a success response
             return jsonify({'message': 'Comment created successfully'}), 201
         else:
             return jsonify({'error': 'User not authenticated'}), 401
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-  
+
+#comment_delete
 @comment_bp.route('/comments/<comment_id>', methods=['DELETE'], endpoint='delete_comment')
-@login_required  # Apply the login_required decorator
+@login_required
 def delete_comment(comment_id):
     try:
         data = request.json
@@ -52,14 +43,10 @@ def delete_comment(comment_id):
 
         user_id = session.get('user_id')
         if user_id:
-            # Retrieve the authenticated user
             user = User.objects.get(id=user_id)
             # Check if the authenticated user is the author of the comment or has appropriate permissions
             if comment.user == user:
-            # Delete the comment
              comment.delete()
-
-            # Return a success response
             return jsonify({'message': 'Comment deleted successfully'})
 
         return jsonify({'error': 'Unauthorized to delete this comment'}), 403
@@ -69,7 +56,29 @@ def delete_comment(comment_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
+#comment_update
+@comment_bp.route('/update_comment/<comment_id>', methods=['PUT'],endpoint='update_comment')
+@login_required
+def update_comment(comment_id):
+    comment = Comment.objects.get(id=comment_id)
+    comment_user_id=comment.user
+
+    user_id = session.get('user_id')
+    if user_id:
+        user=User.objects.get(id=user_id)
+       
+        if (user==comment_user_id):
+           data = request.get_json()
+           if 'text' in data:
+             comment.text= data['text']
+             comment.save()
+
+           return jsonify({'message': 'Post updated successfully'})
+        else:
+         return jsonify({'error': 'User not authenticated'}), 401
+        
+#get_comments_by_post_id
 @comment_bp.route('/comments/<post_id>', methods=['GET'])
 def get_comments_by_post_id(post_id):
     try:
@@ -77,7 +86,6 @@ def get_comments_by_post_id(post_id):
         post=data.get('post_id')
         post = Post.objects.get(id=post_id)
 
-        # Query comments associated with the post
         comments = Comment.objects(post=post)
 
         # Create a list to store comment data

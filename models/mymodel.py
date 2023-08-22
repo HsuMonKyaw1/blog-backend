@@ -36,6 +36,7 @@ class Post(Document):
     like_count = IntField(default=0)
     comment_count = IntField(default=0)
     comments = ListField(ReferenceField('Comment'))
+    status=StringField(required=True)
     meta = {
         'collection':'posts' 
     }
