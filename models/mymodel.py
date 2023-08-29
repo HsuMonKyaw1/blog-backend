@@ -2,6 +2,8 @@ from flask import Flask
 from pymongo import MongoClient
 from mongoengine import Document,ListField,StringField, EmailField, ReferenceField, DateTimeField,IntField,EmbeddedDocument,EmbeddedDocumentField
 
+from controllers.follower_controller import Follower
+
 
 app = Flask(__name__)
 
@@ -10,11 +12,14 @@ class ProfileInfo(EmbeddedDocument):
     profile_picture = StringField()
     bio = StringField()
     name = StringField()
+
+
 class User(Document):
     username = StringField(required=True, unique=True, max_length=50)
     email = EmailField(required=True, unique=True)
     password = StringField(required=True)
     profile_info = EmbeddedDocumentField(ProfileInfo)
+    followers = ListField(ReferenceField(Follower))
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
 
@@ -27,6 +32,7 @@ class User(Document):
     meta = {
         'collection':'users'
     }
+
 # Post model
 class Post(Document):
     title=StringField(required=True,max_length=100)
@@ -50,6 +56,16 @@ class Comment(Document):
     meta = {
         'collection':'comments' 
     }
+    
+class Bookmark(Document):
+    user = ReferenceField(User, required=True)  # Reference to the user who created the bookmark
+    post = ReferenceField(Post, required=True)  # Reference to the bookmarked post
+    created_at = DateTimeField(required=True)    # Timestamp when the bookmark was created
+
+    meta = {
+        'collection': 'bookmarks'
+    }
+
 
 if __name__ == '__main__':
     app.run(debug=True)
