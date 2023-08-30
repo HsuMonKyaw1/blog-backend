@@ -10,6 +10,7 @@ app = Flask(__name__)
 # User model
 class ProfileInfo(EmbeddedDocument):
     profile_picture = StringField()
+    cover_photo=StringField()
     bio = StringField()
     name = StringField()
 
@@ -20,9 +21,11 @@ class User(Document):
     password = StringField(required=True)
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField(Follower))
+    interests = ListField(StringField(max_length=50))
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
-
+    def get_cover_photo(self):
+        return self.profile_info.cover_photo if self.profile_info else None
     def get_bio(self):
         return self.profile_info.bio if self.profile_info else None
 
