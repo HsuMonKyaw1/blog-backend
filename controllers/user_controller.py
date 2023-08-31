@@ -19,8 +19,10 @@ def index():
             'id': str(user.id),
             'username': user.username,
             'email': user.email,
+            'interests':user.interests,
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+                'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             }
@@ -38,6 +40,7 @@ def register_user():
     password = data.get('password')
     email = data.get('email')
     profile_info = data.get('profile_info')
+    interests = data.get('interests')
 
     # Validate the user input
     if 'username' not in data or 'email' not in data or 'password' not in data:
@@ -57,7 +60,8 @@ def register_user():
         username=username,
         email=email,
         password=password,
-        profile_info=profile_info 
+        profile_info=profile_info, 
+        interests=interests
     )
     new_user.save()
 
@@ -125,6 +129,7 @@ def user_profile(user_id):
             'email': user.email,
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+                'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             }
@@ -143,12 +148,14 @@ def user_profile(user_id):
             user.password = data['password']
            if 'profile_picture' in data:
             user.profile_info.profile_picture= data['profile_picture']
+           if 'cover_photo' in data:
+            user.profile_info.cover_photo= data['cover_photo']
            if 'bio' in data:
             user.profile_info.bio = data['bio']
            if 'name' in data:
             user.profile_info.name= data['name']
            
-           user.save()  # Save the updated user record
+           user.save()  
  
            return jsonify({'message': 'Profile updated successfully'})
 
@@ -186,8 +193,10 @@ def get_current_user():
         'id': str(user.id),
             'username': user.username,
             'email': user.email,
+            'interests':user.interests,
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+                'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             } 
@@ -206,8 +215,10 @@ def get_user_by_username(username):
     'id': str(user.id),
             'username': user.username,
             'email': user.email,
+            'interests':user.interests,
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+                'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             }
