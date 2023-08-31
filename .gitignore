@@ -1,0 +1,4 @@
+__pycache__
+controllers/__pycache__
+flask_session
+models/__pycache__

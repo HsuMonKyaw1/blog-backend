@@ -1,5 +1,9 @@
 from flask import Blueprint, jsonify, request,abort,session
 from models.mymodel import User
+from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
+import jwt
+from bson import json_util
+
 
 user_bp = Blueprint('user', __name__)
 
@@ -73,19 +77,36 @@ def login():
 
     # Find the user by username and check the password
     user = User.objects(username=username).first()
+    # user.pop('_id')
 
     if user and user.password == password:
         # Store user information in the session to mark them as authenticated
-         session['user_id'] =str(user.id) 
-         return jsonify({'message': 'Login successful'})
+        #  session['user_id'] =str(user.id) 
+        user_data = {
+        'id': str(user.id),
+            'username': user.username,
+            'email': user.email,
+            'profile_info': {
+                'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+                'bio': user.profile_info.bio if user.profile_info else None,
+                'name': user.profile_info.name if user.profile_info else None
+            } 
+    }
+        access_token = create_access_token(identity=str(user.id))
+        response = {"access_token" : access_token,"message":"Login Successful","user":user_data}
+        
+        return jsonify(response)
 
+    
     return jsonify({'error': 'Invalid credentials'}), 401
 
 #user_logout
 @user_bp.route('/logout', methods=['POST'])
 def logout():
-    session.clear()
-    return jsonify({'message': 'Logout successful'})
+    # session.clear()
+    response = jsonify({"message":"Logout Successful"})
+    unset_jwt_cookies(response)
+    return response
 
 #user_profile
 @user_bp.route('/profile/<user_id>', methods=['GET', 'POST', 'PUT'])
@@ -130,14 +151,38 @@ def user_profile(user_id):
            user.save()  # Save the updated user record
  
            return jsonify({'message': 'Profile updated successfully'})
+
 #get_user_by_id  
-@user_bp.route('/users/<user_id>', methods=['GET'])
-def get_user_by_id(user_id):
-    user = User.objects(id=user_id).first()
+# @user_bp.route('/users/<user_id>', methods=['GET'])
+# @jwt_required()
+# def get_user_by_id(user_id):
+#     user = User.objects(id=user_id).first()
+
+#     if not user:
+#         return jsonify({'message': 'User not found'}), 404
+#     user_data = {
+#         'id': str(user.id),
+#             'username': user.username,
+#             'email': user.email,
+#             'profile_info': {
+#                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+#                 'bio': user.profile_info.bio if user.profile_info else None,
+#                 'name': user.profile_info.name if user.profile_info else None
+#             } 
+#     }
+
+#     return jsonify(user_data)
+
+@user_bp.route('/currentuser', methods=['POST'])
+@jwt_required()
+def get_current_user():
+    jsontoken = request.json.get('access_token')
+    data = decode_token(jsontoken)
+    user = User.objects(id=data['sub']).first()
 
     if not user:
         return jsonify({'message': 'User not found'}), 404
-    user_data = {
+    response = {
         'id': str(user.id),
             'username': user.username,
             'email': user.email,
@@ -147,8 +192,8 @@ def get_user_by_id(user_id):
                 'name': user.profile_info.name if user.profile_info else None
             } 
     }
-
-    return jsonify(user_data)
+    # response.headers.add('Access-Control-Allow-Credentials', '*')
+    return jsonify(response)
 
 #get_user_by_username
 @user_bp.route('/users/<username>', methods=['GET'])

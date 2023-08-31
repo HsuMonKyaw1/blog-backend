@@ -2,7 +2,7 @@ from flask import Flask
 from pymongo import MongoClient
 from mongoengine import Document,ListField,StringField, EmailField, ReferenceField, DateTimeField,IntField,EmbeddedDocument,EmbeddedDocumentField
 
-from controllers.follower_controller import Follower
+# from controllers.follower_controller import Follower
 
 
 app = Flask(__name__)
@@ -19,7 +19,7 @@ class User(Document):
     email = EmailField(required=True, unique=True)
     password = StringField(required=True)
     profile_info = EmbeddedDocumentField(ProfileInfo)
-    followers = ListField(ReferenceField(Follower))
+    followers = ListField(ReferenceField("Follower"))
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
 
