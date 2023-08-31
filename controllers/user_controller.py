@@ -41,6 +41,7 @@ def register_user():
     email = data.get('email')
     profile_info = data.get('profile_info')
     interests = data.get('interests')
+    
 
     # Validate the user input
     if 'username' not in data or 'email' not in data or 'password' not in data:
