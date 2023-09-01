@@ -2,7 +2,8 @@ from flask import Blueprint, jsonify, request,abort,session
 from models.mymodel import User
 from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
 import jwt
-from bson import json_util
+from bson import json_util,ObjectId
+# from bson import ObjectId
 from flask_bcrypt import bcrypt
 
 user_bp = Blueprint('user', __name__)
@@ -39,7 +40,12 @@ def register_user():
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
-    profile_info = data.get('profile_info')
+    profile_info = {
+       "bio" : '',
+       "profile_picture":'',
+       "name":'',
+       "cover_photo":''
+    }
     interests = data.get('interests')
     
 
@@ -118,7 +124,7 @@ def logout():
 def user_profile(user_id):
     # Find the user by username
     data = request.get_json()
-    user = User.objects(id=user_id).first()
+    user = User.objects(id=ObjectId(user_id)).first()
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
