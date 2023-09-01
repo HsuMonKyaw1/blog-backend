@@ -104,6 +104,7 @@ def login():
             'email': user.email,
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+                'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             } 
