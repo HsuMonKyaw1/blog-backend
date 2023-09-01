@@ -194,7 +194,7 @@ def get_current_user():
         'id': str(user.id),
             'username': user.username,
             'email': user.email,
-            'interests':user.interests,
+            # 'interests':user.interests,
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
                 'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
