@@ -21,6 +21,7 @@ class User(Document):
     password = StringField(required=True)
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField("Follower"))
+    interests = ListField(StringField(max_length=50))
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
     def get_cover_photo(self):
@@ -41,10 +42,11 @@ class Post(Document):
     content = StringField(required=True)
     user_id= ReferenceField(User, required=True)
     date_of_creation= DateTimeField()
+    post_photo = StringField()
     like_count = IntField(default=0)
     comment_count = IntField(default=0)
     comments = ListField(ReferenceField('Comment'))
-    status=StringField(required=True)
+    status=StringField(required=False)
     meta = {
         'collection':'posts' 
     }

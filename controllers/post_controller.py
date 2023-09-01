@@ -1,35 +1,38 @@
 from datetime import datetime
+from bson import ObjectId
 from flask import Blueprint, jsonify,request,session
 from models.mymodel import Post,User,Comment
 from auth import login_required
+import cloudinary
+import cloudinary.uploader
 
 post_bp = Blueprint('post', __name__)
 
 #post_create
-@post_bp.route('/posts', methods=['POST'])
-@login_required 
-def create_post():
-    try:
-        data = request.get_json()
-        title = data.get('title')
-        content = data.get('content')
+@post_bp.route('/posts/<user_id>', methods=['POST'])
+def create_post(user_id):
+    user = User.objects(id=ObjectId(user_id)).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    if user:
+     try:
+      title = request.form['title']
+      content = request.form['content']
+      post_photo = request.files['post_photo']
 
-        user_id = session.get('user_id')
+ 
+      if post_photo:
+        response = cloudinary.uploader.upload(post_photo)
+        public_id = response['public_id']
+        post_photo= public_id 
 
-        if user_id:
-            user = User.objects.get(id=user_id)
-            new_post = Post(
-                title=title,
-                content=content,
-                user_id=user,
-                date_of_creation=datetime.now()
-            )
-            new_post.save()
-            return jsonify({'message': 'Post created successfully'}), 201
-        else:
-            return jsonify({'error': 'User not authenticated'}), 401
+        # Create a new post record in the database
+      new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id) 
+      new_post.save()
+  
+      return jsonify(response), 201
 
-    except Exception as e:
+     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 #post_delete
@@ -61,26 +64,31 @@ def delete_post(post_id):
     
 #post_update
 @post_bp.route('/update_post/<post_id>', methods=['PUT'],endpoint='update_post')
-@login_required
 def update_post(post_id):
     post = Post.objects.get(id=post_id)
-    post_user_id=post.user_id
+    # post_user_id=post.user_id
       
-    user_id = session.get('user_id')
-    if user_id:
-        user=User.objects.get(id=user_id)
+    # user_id = session.get('user_id')
+    # if user_id:
+    #     user=User.objects.get(id=user_id)
        
-        if (user==post_user_id):
-           data = request.get_json()
-           if 'title' in data:
-             post.title = data['title']
-           if 'content' in data:
-             post.content = data['content']
-           post.save()
+    #     if (user==post_user_id):
+    title = request.form['title']
+    content = request.form['content']
+    post_photo = request.files['post_photo']
+    if title:
+        post.title = title
+    if content:
+        post.content = content
+    if post_photo:
+        response = cloudinary.uploader.upload(post_photo)
+        public_id = response['public_id']
+        post_photo= public_id
 
-           return jsonify({'message': 'Post updated successfully'})
-        else:
-         return jsonify({'error': 'User not authenticated'}), 401
+        post.save()
+
+    return jsonify(response)
+ 
 
 #get_all_posts
 @post_bp.route('/posts',methods=['GET'])

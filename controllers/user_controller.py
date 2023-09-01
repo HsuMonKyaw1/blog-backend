@@ -1,3 +1,4 @@
+from venv import logger
 from flask import Blueprint, jsonify, request,abort,session
 from models.mymodel import User
 from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
@@ -5,6 +6,8 @@ import jwt
 from bson import json_util,ObjectId
 # from bson import ObjectId
 from flask_bcrypt import bcrypt
+import cloudinary
+import cloudinary.uploader
 
 user_bp = Blueprint('user', __name__)
 
@@ -34,19 +37,18 @@ def index():
 #register_user
 @user_bp.route('/register', methods=['POST'])
 def register_user():
-    # Get registered user input
     data = request.get_json()
 
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
-    profile_info = {
-       "bio" : '',
-       "profile_picture":'',
-       "name":'',
-       "cover_photo":''
-    }
-    interests = data.get('interests')
+    # profile_info = {
+    #    "bio" : '',
+    #    "profile_picture":'',
+    #    "name":'',
+    #    "cover_photo":''
+    # }
+    # interests = data.get('interests')
     
 
     # Validate the user input
@@ -66,8 +68,8 @@ def register_user():
     new_user = User(
         username=username,
         email=email,
-        password=bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt(12)),
-        profile_info=profile_info, 
+        password=bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt(12))
+        # profile_info=profile_info, 
         # interests=interests
     )
     new_user.save()
@@ -123,7 +125,6 @@ def logout():
 @user_bp.route('/profile/<user_id>', methods=['GET', 'POST', 'PUT'])
 def user_profile(user_id):
     # Find the user by username
-    data = request.get_json()
     user = User.objects(id=ObjectId(user_id)).first()
     if not user:
         return jsonify({'message': 'User not found'}), 404
@@ -144,27 +145,41 @@ def user_profile(user_id):
         return jsonify(profile_data)
 
     elif request.method == 'PUT':
-           data = request.get_json()
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        bio = request.form.get('bio')
+        name = request.form.get('name')
+        profile_pic = request.files['image']
+        cover_photo = request.files['cover']
 
-          # Update user profile data      
-           if 'username' in data:
-            user.username = data['username']
-           if 'email' in data:
-            user.email = data['email']
-           if 'password' in data:
-            user.password = data['password']
-           if 'profile_picture' in data:
-            user.profile_info.profile_picture= data['profile_picture']
-           if 'cover_photo' in data:
-            user.profile_info.cover_photo= data['cover_photo']
-           if 'bio' in data:
-            user.profile_info.bio = data['bio']
-           if 'name' in data:
-            user.profile_info.name= data['name']
-           
-           user.save()  
- 
-           return jsonify({'message': 'Profile updated successfully'})
+        # Update user profile data
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = password
+        if bio:
+            user.profile_info.bio = bio
+        if name:
+            user.profile_info.name = name
+
+        # Upload profile picture and cover photo
+        if profile_pic:
+            response = cloudinary.uploader.upload(profile_pic)
+            public_id = response['public_id']
+            user.profile_info.profile_picture = public_id
+        if cover_photo:
+            response = cloudinary.uploader.upload(cover_photo)
+            public_id = response['public_id']
+            user.profile_info.cover_photo = public_id
+
+        user.save()
+        logger.info(response)
+        return jsonify(response)
+    else:
+        return jsonify({"error": "User not found"})
 
 #get_user_by_id  
 # @user_bp.route('/users/<user_id>', methods=['GET'])

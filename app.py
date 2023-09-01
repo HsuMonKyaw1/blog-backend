@@ -1,7 +1,9 @@
-from flask import Flask
+from flask import Flask,request,jsonify
 from flask_session import Session
 from mongoengine import connect
 from pymongo import MongoClient
+import cloudinary
+import cloudinary.uploader
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity,unset_jwt_cookies,jwt_required,JWTManager
@@ -24,6 +26,12 @@ app.config['MONGODB_SETTINGS'] = {
 }
 db = connect(db=app.config['MONGODB_SETTINGS']['db'], host=app.config['MONGODB_SETTINGS']['host'])
 print(db)
+
+cloudinary.config(
+    cloud_name='dmatntnyh',
+    api_key='596561571723175',
+    api_secret='QZidiS7SvTCzaZJ3QB1BEWFH6OM'
+)
 
 @app.after_request
 def refresh_expiring_jwts(response):
@@ -49,3 +57,4 @@ from controllers.user_controller import user_bp
 app.register_blueprint(post_bp)
 app.register_blueprint(comment_bp)
 app.register_blueprint(user_bp)
+
