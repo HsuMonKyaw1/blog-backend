@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity,unset_jwt_cookies,jwt_required,JWTManager
 from flask_bcrypt import Bcrypt
 import json
+import os
 
 app = Flask(__name__)
 # app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
@@ -27,11 +28,8 @@ app.config['MONGODB_SETTINGS'] = {
 db = connect(db=app.config['MONGODB_SETTINGS']['db'], host=app.config['MONGODB_SETTINGS']['host'])
 print(db)
 
-cloudinary.config(
-    cloud_name='dmatntnyh',
-    api_key='596561571723175',
-    api_secret='QZidiS7SvTCzaZJ3QB1BEWFH6OM'
-)
+cloudinary.config(cloud_name = os.getenv('CLOUD_NAME'), api_key=os.getenv('API_KEY'), 
+    api_secret=os.getenv('API_SECRET'))
 
 @app.after_request
 def refresh_expiring_jwts(response):

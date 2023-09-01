@@ -21,7 +21,7 @@ class User(Document):
     password = StringField(required=True)
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField("Follower"))
-    interests = ListField(StringField(max_length=50))
+    interests = ListField(IntField())
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
     def get_cover_photo(self):
