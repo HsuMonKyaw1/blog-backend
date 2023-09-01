@@ -3,7 +3,7 @@ from models.mymodel import User
 from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
 import jwt
 from bson import json_util
-
+from flask_bcrypt import bcrypt
 
 user_bp = Blueprint('user', __name__)
 
@@ -60,9 +60,9 @@ def register_user():
     new_user = User(
         username=username,
         email=email,
-        password=password,
+        password=bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt(12)),
         profile_info=profile_info, 
-        interests=interests
+        # interests=interests
     )
     new_user.save()
 
@@ -84,7 +84,7 @@ def login():
     user = User.objects(username=username).first()
     # user.pop('_id')
 
-    if user and user.password == password:
+    if user and bcrypt.checkpw(password.encode('utf-8'),user.password.encode('utf-8')):
         # Store user information in the session to mark them as authenticated
         #  session['user_id'] =str(user.id) 
         user_data = {

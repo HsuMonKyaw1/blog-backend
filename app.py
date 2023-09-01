@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity,unset_jwt_cookies,jwt_required,JWTManager
+from flask_bcrypt import Bcrypt
 import json
 
 app = Flask(__name__)
@@ -13,6 +14,7 @@ app.config["JWT_SECRET_KEY"] = 'secret'
 jwt = JWTManager(app)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 Session(app)
+bcrypt = Bcrypt(app)
 cors= CORS(app, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type','Authorization','Access-Control-Allow-Credentials'
 
