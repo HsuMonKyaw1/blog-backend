@@ -51,8 +51,10 @@ def refresh_expiring_jwts(response):
 from controllers.post_controller import post_bp
 from controllers.comment_controller import comment_bp
 from controllers.user_controller import user_bp
+from controllers.follower_controller import follower_bp
 
 app.register_blueprint(post_bp)
 app.register_blueprint(comment_bp)
 app.register_blueprint(user_bp)
+app.register_blueprint(follower_bp)
 
