@@ -1,7 +1,7 @@
 from datetime import datetime
 from bson import ObjectId
 from flask import Blueprint, jsonify,request,session
-from models.mymodel import Post,User,Comment
+from models.mymodel import User,Post,Comment
 from auth import login_required
 import cloudinary
 import cloudinary.uploader
@@ -75,19 +75,25 @@ def update_post(post_id):
     #     if (user==post_user_id):
     title = request.form['title']
     content = request.form['content']
-    post_photo = request.files['post_photo']
+
+    if request.form.get('post_photo') == '':
+        post_photo = None
+    else:
+        if post.post_photo:
+         cloudinary.uploader.destroy(post.post_photo)
+        post_photo = request.files['post_photo']
     if title:
         post.title = title
     if content:
         post.content = content
     if post_photo:
-        response = cloudinary.uploader.upload(post_photo)
-        public_id = response['public_id']
-        post_photo= public_id
+        cover_response = cloudinary.uploader.upload(post_photo)
+        url = cover_response['secure_url']
+        post.post_photo = url
 
-        post.save()
+    post.save()
 
-    return jsonify(response)
+    return jsonify("Updated successfully")
  
 
 #get_all_posts

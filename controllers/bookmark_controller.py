@@ -1,73 +1,80 @@
 from flask import Blueprint, request, jsonify, abort, session
-from models import User, Post, Bookmark 
-from models.mymodel import User
-from auth import login_required
+from models.mymodel import User,Post
 
-# Create a blueprint for the bookmark controller
 bookmark_bp = Blueprint('bookmark', __name__)
 
-# Route to add a bookmark
-@bookmark_bp.route('/add/<post_id>', methods=['POST'])
-@login_required
-def add_bookmark(post_id):
-    user_id = session['user_id']
+#bookmark a post
+@bookmark_bp.route('/bookmark/<post_id>', methods=['POST'])
+def bookmark_post(post_id):
+    try:
+     # Get the current user
+     username= request.json.get('username') 
+     user = User.objects(username=username).first()
+     if user:
+            # Retrieve the current user
+            user = User.objects.get(username=username)
 
-    user = User.objects(id=user_id).first()
-    post = Post.objects(id=post_id).first()
+            # Retrieve the post to be bookmarked
+            post = Post.objects.get(id=post_id)
 
-    if not user or not post:
-        abort(404, "User or Post not found")
+            # Check if the post is not already bookmarked
+            if post not in user.bookmarks:
+                user.bookmarks.append(post)
+                user.save()
 
-    existing_bookmark = Bookmark.objects(user=user, post=post).first()
+                return jsonify({'message': 'Post bookmarked successfully'})
 
-    if existing_bookmark:
-        return jsonify(message="Bookmark already exists")
+            return jsonify({'message': 'Post already bookmarked'})
 
-    bookmark = Bookmark(user=user, post=post)
-    bookmark.save()
+     return jsonify({'error': 'User not authenticated'}), 401
 
-    return jsonify(message="Bookmark added successfully")
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-# Route to remove a bookmark
-@bookmark_bp.route('/remove/<post_id>', methods=['POST'])
-@login_required
+#remove bookmarked post
+@bookmark_bp.route('/remove-bookmark/<post_id>', methods=['POST'])
 def remove_bookmark(post_id):
-    user_id = session['user_id']
+    try:
+        # Retrieve the current user
+        username= request.json.get('username')
+        user = User.objects.get(username=username)
 
-    user = User.objects(id=user_id).first()
-    post = Post.objects(id=post_id).first()
+        # Retrieve the post to be removed from bookmarks
+        post = Post.objects.get(id=post_id)
 
-    if not user or not post:
-        abort(404, "User or Post not found")
+        # Check if the post is bookmarked
+        if post in user.bookmarks:
+            user.bookmarks.remove(post)
+            user.save()
 
-    bookmark = Bookmark.objects(user=user, post=post).first()
+            return jsonify({'message': 'Post removed from bookmarks successfully'})
 
-    if not bookmark:
-        return jsonify(message="Bookmark not found")
+        return jsonify({'message': 'Post is not bookmarked'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+#view bookmarks of a user
+@bookmark_bp.route('/bookmarks/<user_id>', methods=['GET'])
+def view_bookmarks(user_id):
+    try:
+        #get current user
+        user = User.objects.get(id=user_id)
 
-    bookmark.delete()
+        # Get the user's bookmarked posts
+        bookmarked_posts = user.bookmarks
+        print(user.bookmarks)
 
-    return jsonify(message="Bookmark removed successfully")
+        # Create a list to store the bookmarked post data (e.g., titles, content,post_cover)
+        bookmarked_posts_data = []
+        for post in bookmarked_posts:
+            post_data = {
+                'title': post.title,
+                'content': post.content,
+                'post_photo':post.post_photo,
+                }
+            bookmarked_posts_data.append(post_data)
+        return jsonify({'bookmarked_posts':bookmarked_posts_data})
 
-# Route to list bookmarks for the currently logged-in user
-@bookmark_bp.route('/list', methods=['GET'])
-@login_required
-def list_bookmarks():
-    user_id = session['user_id']
-    user = User.objects(id=user_id).first()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    if not user:
-        abort(404, "User not found")
-
-    bookmarks = Bookmark.objects(user=user)
-
-    bookmark_list = [
-        {
-            'post_id': str(bookmark.post.id),
-            'title': bookmark.post.title,
-            'content': bookmark.post.content,
-        }
-        for bookmark in bookmarks
-    ]
-
-    return jsonify(bookmarks=bookmark_list)

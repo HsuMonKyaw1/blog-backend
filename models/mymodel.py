@@ -1,9 +1,6 @@
 from flask import Flask
 from pymongo import MongoClient
-from mongoengine import PULL,Document,ListField,StringField, EmailField, ReferenceField, DateTimeField,IntField,EmbeddedDocument,EmbeddedDocumentField
-
-# from controllers.follower_controller import Follower
-
+from mongoengine import GenericReferenceField,PULL,Document,ListField,StringField, EmailField, ReferenceField, DateTimeField,IntField,EmbeddedDocument,EmbeddedDocumentField
 
 app = Flask(__name__)
 
@@ -22,6 +19,7 @@ class User(Document):
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField('self'))
     interests = ListField(IntField())
+    bookmarks = ListField(ReferenceField('Post'))
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
     def get_cover_photo(self):
@@ -50,6 +48,10 @@ class Post(Document):
         'collection':'posts' 
     }
 
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 # Comment model
 class Comment(Document):
     text = StringField(required=True)
@@ -59,17 +61,3 @@ class Comment(Document):
     meta = {
         'collection':'comments' 
     }
-    
-class Bookmark(Document):
-    user = ReferenceField(User, required=True)  # Reference to the user who created the bookmark
-    post = ReferenceField(Post, required=True)  # Reference to the bookmarked post
-    created_at = DateTimeField(required=True)    
-
-    meta = {
-        'collection': 'bookmarks'
-    }
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
