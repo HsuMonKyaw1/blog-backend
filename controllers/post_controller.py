@@ -15,25 +15,30 @@ def create_post(user_id):
     if not user:
         return jsonify({'message': 'User not found'}), 404
     if user:
-     try:
-      title = request.form['title']
-      content = request.form['content']
-      post_photo = request.files['post_photo']
+        try:
+            title = request.form['title']
+            content = request.form['content']
+             #   post_photo = request.files['post_photo']
+            if request.form.get('post_photo') == '':
+            # if request.files['cover_img'].filename == '':
+                post_photo = None
+            else:
+                post_photo = request.files['post_photo']
 
  
-      if post_photo:
-        response = cloudinary.uploader.upload(post_photo)
-        public_id = response['public_id']
-        post_photo= public_id 
+            if post_photo:
+                response = cloudinary.uploader.upload(post_photo)
+                url = response['secure_url']
+                post_photo= url
 
         # Create a new post record in the database
-      new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id) 
-      new_post.save()
-  
-      return jsonify(response), 201
+            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id) 
+            new_post.save()
+        
+            return jsonify(response), 201
 
-     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 #post_delete
 @post_bp.route('/posts/<post_id>', methods=['DELETE'],endpoint='delete_post')
