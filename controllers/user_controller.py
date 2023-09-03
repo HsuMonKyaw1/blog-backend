@@ -80,6 +80,7 @@ def register_user():
        "name":'',
        "cover_photo":''
     }
+    
     # interests = data.get('interests')
     
 
@@ -102,7 +103,8 @@ def register_user():
         email=email,
         password=bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt(12)),
         profile_info=profile_info,
-        interests= []
+        interests= [],
+        followerCount = 0
         # interests=interests
     )
     new_user.save()
@@ -223,7 +225,7 @@ def user_profile(user_id):
         bio = request.form.get('bio')
         name = request.form.get('name')
         interests = request.form.get('interests')
-        if request.form.get('profile_img') == None or request.form.get('profile_img') == '':
+        if request.form.get('profile_img') == '':
             # if request.files['profile_img'].filename == '':
                 profile_pic = None
         else:
@@ -231,7 +233,7 @@ def user_profile(user_id):
                 cloudinary.uploader.destroy(user.profile_info.profile_picture)
             profile_pic = request.files['profile_img']
         
-        if request.form.get('cover_img') == '' or request.form.get('cover_img') == None:
+        if request.form.get('cover_img') == '':
             # if request.files['cover_img'].filename == '':
                 cover_photo = None
         else:
