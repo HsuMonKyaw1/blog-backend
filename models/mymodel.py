@@ -18,6 +18,8 @@ class User(Document):
     password = StringField(required=True)
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField('self'))
+    followings = ListField(ReferenceField('self'))
+    followerCount = IntField()
     interests = ListField(IntField())
     bookmarks = ListField(ReferenceField('Post'))
     def get_profile_picture(self):

@@ -10,6 +10,9 @@ from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity,unse
 from flask_bcrypt import Bcrypt
 import json
 import os
+from flask_marshmallow import Marshmallow
+
+
 
 app = Flask(__name__)
 # app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
@@ -25,6 +28,7 @@ app.config['MONGODB_SETTINGS'] = {
     'db': 'social_platform',
     'host': 'mongodb+srv://hsumonk001:hsumonkyaw12345@cluster0.nzi4wje.mongodb.net/?retryWrites=true&w=majority'
 }
+ma= Marshmallow(app)
 db = connect(db=app.config['MONGODB_SETTINGS']['db'], host=app.config['MONGODB_SETTINGS']['host'])
 print(db)
 

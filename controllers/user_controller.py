@@ -36,6 +36,29 @@ def index():
         user_list.append(user_data)
     return jsonify(user_list)
 
+#get_top_users_by_followers_count
+@user_bp.route('/suggestedUsers',methods=['GET'])
+def suggestedUser():
+    users = User.objects.all()
+    user_list = []
+    response_list = []
+    for user in users:
+        user_data = {
+            'id': str(user.id),
+            'username': user.username,
+            'email': user.email,
+            'profile_info': {
+                'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
+            },
+            'followers' : user.followers,
+            'followerCount': user.followerCount,
+        }
+        user_list.append(user_data)
+    user_list=sorted(user_list,key = lambda d: d['followerCount'],reverse=True)
+    for i in range(10):
+        response_list.append(user_list[i])
+    return jsonify(json.dumps(response_list))
+
 #register_user
 @user_bp.route('/register', methods=['POST'])
 def register_user():
@@ -156,7 +179,7 @@ def user_profile(user_id):
         bio = request.form.get('bio')
         name = request.form.get('name')
         interests = request.form.get('interests')
-        if request.form.get('profile_img') == '':
+        if request.form.get('profile_img') == None or request.form.get('profile_img') == '':
             # if request.files['profile_img'].filename == '':
                 profile_pic = None
         else:
@@ -164,7 +187,7 @@ def user_profile(user_id):
                 cloudinary.uploader.destroy(user.profile_info.profile_picture)
             profile_pic = request.files['profile_img']
         
-        if request.form.get('cover_img') == '':
+        if request.form.get('cover_img') == '' or request.form.get('cover_img') == None:
             # if request.files['cover_img'].filename == '':
                 cover_photo = None
         else:
@@ -274,7 +297,9 @@ def get_current_user():
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             },
-            "interests":user.interests
+            "interests":user.interests,
+            "followers":user.followers,
+            "bookmarks":user.bookmarks
     }
     # response.headers.add('Access-Control-Allow-Credentials', '*')
     return jsonify(response)

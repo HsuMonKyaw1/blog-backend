@@ -16,9 +16,12 @@ def follow_user(user_id):
     # Check if the user exists
     if user_to_follow:
         # Check if the user is not already followed
-        if user_to_follow not in user.followers:
+        if user not in user_to_follow.followers:
             # Add the user to the follower list
-            user.followers.append(user_to_follow)
+            user_to_follow.followers.append(user)
+            user_to_follow.followerCount +=1
+            user.followings.append(user_to_follow)
+            user_to_follow.save()
             user.save()
             return jsonify({'message': f'You are now following {user_to_follow.username}'}), 200
         else:
