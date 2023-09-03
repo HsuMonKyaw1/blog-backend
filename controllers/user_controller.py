@@ -1,6 +1,6 @@
 from venv import logger
 from flask import Blueprint, jsonify, request,abort,session,json
-from models.mymodel import User
+from models.mymodel import User,Post
 from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
 import jwt
 from bson import json_util,ObjectId
@@ -9,6 +9,10 @@ from flask_bcrypt import bcrypt
 import cloudinary
 import cloudinary.uploader
 import os
+# from app import UserSchema
+
+# user_schema = UserSchema()
+# user_schema = UserSchema(many=True)
 
 user_bp = Blueprint('user', __name__)
 
@@ -39,10 +43,13 @@ def index():
 #get_top_users_by_followers_count
 @user_bp.route('/suggestedUsers',methods=['GET'])
 def suggestedUser():
-    users = User.objects.all()
+    users = User.objects.order_by('-followerCount', '+username').limit(10)
     user_list = []
-    response_list = []
+   
     for user in users:
+        follower_list = []
+        for i in user.followers:
+            follower_list.append(str(User.objects(id=i.id).first().id))
         user_data = {
             'id': str(user.id),
             'username': user.username,
@@ -50,14 +57,14 @@ def suggestedUser():
             'profile_info': {
                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
             },
-            'followers' : user.followers,
+            'followers' : follower_list,
             'followerCount': user.followerCount,
         }
         user_list.append(user_data)
     user_list=sorted(user_list,key = lambda d: d['followerCount'],reverse=True)
-    for i in range(10):
-        response_list.append(user_list[i])
-    return jsonify(json.dumps(response_list))
+    # for i in range(10):
+    #     response_list.append(user_list[i])
+    return jsonify(user_list)
 
 #register_user
 @user_bp.route('/register', methods=['POST'])
@@ -116,7 +123,20 @@ def login():
 
     # Find the user by username and check the password
     user = User.objects(username=username).first()
+    posts = Post.objects(user_id=user.id)
     # user.pop('_id')
+    follower_list = []
+    following_list = []
+    post_list = []
+    for i in user.followers:
+        follower_list.append(str(User.objects(id=i.id).first().id))
+    for i in user.followings:
+        following_list.append(str(User.objects(id=i.id).first().id))
+    for post in posts:
+        post_data ={
+            'id': str(post.id)
+        }
+        post_list.append(post_data)
 
     if user and bcrypt.checkpw(password.encode('utf-8'),user.password.encode('utf-8')):
         # Store user information in the session to mark them as authenticated
@@ -130,7 +150,12 @@ def login():
                 'cover_photo': user.profile_info.cover_photo if user.profile_info else None,
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
-            } 
+            },
+            "interests":user.interests,
+            "followers":follower_list,
+            "followings":following_list,
+            "bookmarks":user.bookmarks,
+            "posts":post_list
     }
         access_token = create_access_token(identity=str(user.id))
         response = {"access_token" : access_token,"message":"Login Successful","user":user_data}
@@ -158,6 +183,22 @@ def user_profile(user_id):
 
     if request.method == 'GET':
          # Return user profile data
+        posts = Post.objects(user_id=ObjectId(user.id))
+
+        follower_list = []
+        following_list = []
+        post_list = []
+
+        for i in user.followers:
+            follower_list.append(str(User.objects(id=i.id).first().id))
+        for i in user.followings:
+            following_list.append(str(User.objects(id=i.id).first().id))
+        for post in posts:
+            post_data ={
+                'id': str(post.id)
+            }
+            post_list.append(post_data)
+        # post_list.append(posts)
         profile_data = {
             'id': str(user.id),
             'username': user.username,
@@ -168,7 +209,10 @@ def user_profile(user_id):
                 'bio': user.profile_info.bio if user.profile_info else None,
                 'name': user.profile_info.name if user.profile_info else None
             },
-            'interests':user.interests
+            'interests':user.interests,
+            "followers":follower_list,
+            "followings":following_list,
+            "posts":post_list
         }
         return jsonify(profile_data)
 
@@ -256,36 +300,29 @@ def passwordChange(user_id):
     
     return jsonify({'error':'Passwords do not match'}), 401
 
-#get_user_by_id  
-# @user_bp.route('/users/<user_id>', methods=['GET'])
-# @jwt_required()
-# def get_user_by_id(user_id):
-#     user = User.objects(id=user_id).first()
-
-#     if not user:
-#         return jsonify({'message': 'User not found'}), 404
-#     user_data = {
-#         'id': str(user.id),
-#             'username': user.username,
-#             'email': user.email,
-#             'profile_info': {
-#                 'profile_picture': user.profile_info.profile_picture if user.profile_info else None,
-#                 'bio': user.profile_info.bio if user.profile_info else None,
-#                 'name': user.profile_info.name if user.profile_info else None
-#             } 
-#     }
-
-#     return jsonify(user_data)
-
 @user_bp.route('/currentuser', methods=['POST'])
 @jwt_required()
 def get_current_user():
     jsontoken = request.json.get('access_token')
     data = decode_token(jsontoken)
     user = User.objects(id=data['sub']).first()
+    posts = Post.objects(user_id=user.id)
 
     if not user:
         return jsonify({'message': 'User not found'}), 404
+    
+    follower_list = []
+    following_list = []
+    post_list = []
+    for i in user.followers:
+        follower_list.append(str(User.objects(id=i.id).first().id))
+    for i in user.followings:
+        following_list.append(str(User.objects(id=i.id).first().id))
+    for post in posts:
+        post_data ={
+            'id': str(post.id)
+        }
+        post_list.append(post_data)
     response = {
         'id': str(user.id),
             'username': user.username,
@@ -298,8 +335,10 @@ def get_current_user():
                 'name': user.profile_info.name if user.profile_info else None
             },
             "interests":user.interests,
-            "followers":user.followers,
-            "bookmarks":user.bookmarks
+            "followers":follower_list,
+            "followings":following_list,
+            "bookmarks":user.bookmarks,
+            "posts":post_list
     }
     # response.headers.add('Access-Control-Allow-Credentials', '*')
     return jsonify(response)

@@ -3,6 +3,7 @@ from flask_session import Session
 from mongoengine import connect
 from pymongo import MongoClient
 import cloudinary
+from bson import json_util
 import cloudinary.uploader
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta, timezone
@@ -10,9 +11,18 @@ from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity,unse
 from flask_bcrypt import Bcrypt
 import json
 import os
-from flask_marshmallow import Marshmallow
+from flask.json import JSONEncoder
+from mongoengine.base import BaseDocument
+from mongoengine.queryset.base import BaseQuerySet
+# from flask_marshmallow import Marshmallow, Schema, fields
 
-
+class MongoEngineJSONEncoder(JSONEncoder):
+    def default(self,obj):
+        if isinstance(obj,BaseDocument):
+            return json_util._json_convert(obj.to_mongo())
+        elif isinstance(obj,BaseQuerySet):
+            return json_util._json_convert(obj.as_pymongo())
+        return JSONEncoder.default(self, obj)
 
 app = Flask(__name__)
 # app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
@@ -28,7 +38,13 @@ app.config['MONGODB_SETTINGS'] = {
     'db': 'social_platform',
     'host': 'mongodb+srv://hsumonk001:hsumonkyaw12345@cluster0.nzi4wje.mongodb.net/?retryWrites=true&w=majority'
 }
-ma= Marshmallow(app)
+# ma= Marshmallow(app)
+
+# ma.Schema.TYPE_MAPPING[ObjectId] = fields.fields.String
+# class UserSchema(ma.Schema):
+#     id = fields.fields.String()
+#     class Meta:
+#         additional = ('email','followerCount','followers')
 db = connect(db=app.config['MONGODB_SETTINGS']['db'], host=app.config['MONGODB_SETTINGS']['host'])
 print(db)
 
@@ -57,6 +73,8 @@ from controllers.comment_controller import comment_bp
 from controllers.user_controller import user_bp
 from controllers.follower_controller import follower_bp
 from controllers.bookmark_controller import bookmark_bp
+
+app.json_encoder = MongoEngineJSONEncoder
 
 app.register_blueprint(post_bp)
 app.register_blueprint(comment_bp)

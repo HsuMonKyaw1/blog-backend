@@ -1,6 +1,7 @@
 import datetime
 from flask import Flask,Blueprint, abort, session,jsonify,request
 from models.mymodel import User
+from bson import json_util,ObjectId
 follower_bp = Blueprint('follower', __name__)
 
 #follow user
@@ -19,8 +20,8 @@ def follow_user(user_id):
         if user not in user_to_follow.followers:
             # Add the user to the follower list
             user_to_follow.followers.append(user)
-            user_to_follow.followerCount +=1
             user.followings.append(user_to_follow)
+            user_to_follow.followerCount +=1
             user_to_follow.save()
             user.save()
             return jsonify({'message': f'You are now following {user_to_follow.username}'}), 200
@@ -42,9 +43,12 @@ def unfollow_user(user_id):
     # Check if the user exists
     if user_to_unfollow:
         # Check if the user is in the follower list
-        if user_to_unfollow in user.followers:
+        if user in user_to_unfollow.followers:
             # Remove the user from the follower list
-            user.followers.remove(user_to_unfollow)
+            user_to_unfollow.followers.remove(user)
+            user.followings.remove(user_to_unfollow)
+            user_to_unfollow.followerCount -= 1
+            user_to_unfollow.save()
             user.save()
             return jsonify({'message': f'You have unfollowed {user_to_unfollow.username}'}), 200
         else:
@@ -53,7 +57,7 @@ def unfollow_user(user_id):
         return jsonify({'message': 'User not found'}), 404
 
 #get followers of a user
-@follower_bp.route('/followers/<user_id>', methods=['GET'])
+@follower_bp.route('/follower/<user_id>', methods=['GET'])
 def get_followers(user_id):
     try:
       
@@ -63,9 +67,48 @@ def get_followers(user_id):
         followers = user.followers
 
         # Create a list to store follower usernames
-        follower_usernames = [follower.username for follower in followers]
+        follower_list = []
+        for follower in followers:
+            followerData = User.objects.get(id = ObjectId(follower.id))
+            follower_data = {
+                'id': str(followerData.id),
+                'username': followerData.username,
+                'email': followerData.email,
+                # 'interests':user.interests,
+                'profile_info': {
+                    'profile_picture': followerData.profile_info.profile_picture if user.profile_info else None,
+                }
+            }
+            follower_list.append(follower_data)
+        return jsonify(follower_list)
+    
+    except Exception as e:
+     return jsonify({'error': str(e)}), 500
+    
+@follower_bp.route('/following/<user_id>', methods=['GET'])
+def get_followings(user_id):
+    try:
+      
+        user = User.objects.get(id=user_id)
 
-        return jsonify({'followers': follower_usernames})
+        # Get the followers of the user
+        followings= user.followings
 
+        # Create a list to store follower usernames
+        follower_list = []
+        for following in followings:
+            followingData = User.objects.get(id = ObjectId(following.id))
+            follower_data = {
+                'id': str(followingData.id),
+                'username': followingData.username,
+                'email': followingData.email,
+                # 'interests':user.interests,
+                'profile_info': {
+                    'profile_picture': followingData.profile_info.profile_picture if user.profile_info else None,
+                }
+            }
+            follower_list.append(follower_data)
+        return jsonify(follower_list)
+    
     except Exception as e:
      return jsonify({'error': str(e)}), 500
