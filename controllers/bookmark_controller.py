@@ -12,19 +12,17 @@ def bookmark_post(post_id):
      user = User.objects(username=username).first()
      if user:
             # Retrieve the current user
-            user = User.objects.get(username=username)
+        user = User.objects.get(username=username)
 
-            # Retrieve the post to be bookmarked
-            post = Post.objects.get(id=post_id)
+        # Check if the post is not already bookmarked
+        if post_id not in user.bookmarks:
+            # Add the post_id to the user's bookmarks
+            user.bookmarks.append(post_id)
+            user.save()
 
-            # Check if the post is not already bookmarked
-            if post not in user.bookmarks:
-                user.bookmarks.append(post)
-                user.save()
+            return jsonify({'message': 'Post bookmarked successfully'})
 
-                return jsonify({'message': 'Post bookmarked successfully'})
-
-            return jsonify({'message': 'Post already bookmarked'})
+        return jsonify({'message': 'Post already bookmarked'})
 
      return jsonify({'error': 'User not authenticated'}), 401
 
@@ -39,12 +37,9 @@ def remove_bookmark(post_id):
         username= request.json.get('username')
         user = User.objects.get(username=username)
 
-        # Retrieve the post to be removed from bookmarks
-        post = Post.objects.get(id=post_id)
-
         # Check if the post is bookmarked
-        if post in user.bookmarks:
-            user.bookmarks.remove(post)
+        if post_id in user.bookmarks:
+            user.bookmarks.remove(post_id)
             user.save()
 
             return jsonify({'message': 'Post removed from bookmarks successfully'})
@@ -61,13 +56,14 @@ def view_bookmarks(user_id):
         user = User.objects.get(id=user_id)
 
         # Get the user's bookmarked posts
-        bookmarked_posts = user.bookmarks
-        print(user.bookmarks)
+        bookmarked_post_ids = user.bookmarks
 
         # Create a list to store the bookmarked post data (e.g., titles, content,post_cover)
         bookmarked_posts_data = []
-        for post in bookmarked_posts:
+        for post_id in bookmarked_post_ids:
+            post = Post.objects.get(id=post_id)
             post_data = {
+                'post_id': str(post.id),
                 'title': post.title,
                 'content': post.content,
                 'post_photo':post.post_photo,

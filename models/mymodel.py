@@ -21,7 +21,7 @@ class User(Document):
     followings = ListField(ReferenceField('self'))
     followerCount = IntField()
     interests = ListField(IntField())
-    bookmarks = ListField(ReferenceField('Post'))
+    bookmarks = ListField(StringField(max_length=24))
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
     def get_cover_photo(self):
