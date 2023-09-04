@@ -73,6 +73,7 @@ from controllers.comment_controller import comment_bp
 from controllers.user_controller import user_bp
 from controllers.follower_controller import follower_bp
 from controllers.bookmark_controller import bookmark_bp
+from controllers.search_controller import search_bp
 
 # app.json_encoder = MongoEngineJSONEncoder
 
@@ -81,4 +82,5 @@ app.register_blueprint(comment_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(follower_bp)
 app.register_blueprint(bookmark_bp)
+app.register_blueprint(search_bp)
 
