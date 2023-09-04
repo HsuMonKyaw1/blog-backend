@@ -266,9 +266,6 @@ def user_profile(user_id):
             user.profile_info.cover_photo = url
         
         response = {
-            # "profile_response": profile_response,
-            # "cover_response": cover_response,
-            # "username" : user.username
             "message" : "Updated Successfully"
         }
         user.save()
