@@ -11,24 +11,24 @@ from flask_jwt_extended import create_access_token,get_jwt,get_jwt_identity,unse
 from flask_bcrypt import Bcrypt
 import json
 import os
-from flask.json import JSONEncoder
+# from flask.json import JSONEncoder
 from mongoengine.base import BaseDocument
 from mongoengine.queryset.base import BaseQuerySet
 # from flask_marshmallow import Marshmallow, Schema, fields
 
-class MongoEngineJSONEncoder(JSONEncoder):
-    def default(self,obj):
-        if isinstance(obj,BaseDocument):
-            return json_util._json_convert(obj.to_mongo())
-        elif isinstance(obj,BaseQuerySet):
-            return json_util._json_convert(obj.as_pymongo())
-        return JSONEncoder.default(self, obj)
+# class MongoEngineJSONEncoder(JSONEncoder):
+#     def default(self,obj):
+#         if isinstance(obj,BaseDocument):
+#             return json_util._json_convert(obj.to_mongo())
+#         elif isinstance(obj,BaseQuerySet):
+#             return json_util._json_convert(obj.as_pymongo())
+#         return JSONEncoder.default(self, obj)
 
 app = Flask(__name__)
 # app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
 app.config["JWT_SECRET_KEY"] = 'secret'
 jwt = JWTManager(app)
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+# app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 Session(app)
 bcrypt = Bcrypt(app)
 cors= CORS(app, supports_credentials=True)

@@ -19,7 +19,7 @@ class User(Document):
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField('self'))
     followings = ListField(ReferenceField('self'))
-    followerCount = IntField()
+    followerCount = IntField(default = 0)
     interests = ListField(IntField())
     bookmarks = ListField(ReferenceField('Post'))
     def get_profile_picture(self):
@@ -45,6 +45,7 @@ class Post(Document):
     like_count = IntField(default=0)
     comment_count = IntField(default=0)
     comments = ListField(ReferenceField('Comment'))
+    tags = ListField(IntField())
     status=StringField(required=False)
     meta = {
         'collection':'posts' 

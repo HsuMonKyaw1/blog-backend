@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,timezone
 from bson import ObjectId
 from flask import Blueprint, jsonify,request,session
 from models.mymodel import User,Post,Comment
@@ -18,24 +18,23 @@ def create_post(user_id):
         try:
             title = request.form['title']
             content = request.form['content']
+            tags = request.form.get('tags')
              #   post_photo = request.files['post_photo']
             if request.form.get('post_photo') == '':
             # if request.files['cover_img'].filename == '':
                 post_photo = None
             else:
                 post_photo = request.files['post_photo']
-
- 
             if post_photo:
                 response = cloudinary.uploader.upload(post_photo)
                 url = response['secure_url']
                 post_photo= url
 
         # Create a new post record in the database
-            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id) 
+            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id,date_of_creation = datetime.now(timezone.utc),tags = tags) 
             new_post.save()
         
-            return jsonify(response), 201
+            return jsonify({'message': 'Post added successfully'}), 201
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -111,9 +110,9 @@ def index():
             'id': str(post.id),
             'title':post.title,
             'content': post.content,
-            'user_id': post.user_id,
+            'user_id': str(post.user_id.id),
             'date_of_creation': post.date_of_creation,
-            'likes_count':post.likes_count,
+            'like_count':post.like_count,
             'comment_count':post.comment_count
         }
         post_list.append(post_data)
@@ -123,29 +122,82 @@ def index():
 @post_bp.route('/user/<user_id>/posts', methods=['GET'])
 def get_user_posts_by_uid(user_id):
     try:
-        user = User.objects.get(id=user_id)
+        user = User.objects.get(id=ObjectId(user_id))
         if user:
-            posts = Post.objects(user=user)
+            posts = Post.objects(user_id=user.id,status='Posted')
 
             post_list = []
             for post in posts:
                 post_data = {
+                    'id':str(post.id),
                     'title':post.title,
-                    'content': post.content,
-                    'created_at': post.date_of_creation,
-                    'likes_count':post.likes_count,
+                    'like_count':post.like_count,
                     'comment_count':post.comment_count,
-                    'comments':post.comments
+                    'date_of_creation':post.date_of_creation,
+                    'post_photo':post.post_photo,
+                    'tags':post.tags,
+                    'status':post.status
                 }
                 post_list.append(post_data)
 
-            return jsonify({'posts': post_list}), 200
+            return jsonify(post_list), 200
         else:
             return jsonify({'message': 'User not found'}), 404
     except Exception as e:
         print(e)
         return jsonify({'message': 'An error occurred'}), 500
    
+#get_draft_posts
+@post_bp.route('/user/<user_id>/posts/draft', methods=['GET'])
+def get_user_posts_by_uid_draft(user_id):
+    try:
+        user = User.objects.get(id=ObjectId(user_id))
+        if user:
+            posts = Post.objects(user_id=user.id,status='Draft')
+
+            post_list = []
+            for post in posts:
+                post_data = {
+                    'id':str(post.id),
+                    'title':post.title,
+                    'date_of_creation':post.date_of_creation,
+                    'post_photo':post.post_photo,
+                    'tags':post.tags,
+                    'status':post.status,
+                    'content':post.content
+                }
+                post_list.append(post_data)
+
+            return jsonify(post_list), 200
+        else:
+            return jsonify({'message': 'User not found'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'An error occurred'}), 500
+   
+#get_single_post
+@post_bp.route('/post/<post_id>', methods=['GET'])
+def get_post_by_id(post_id):
+    try: 
+        post = Post.objects(id=ObjectId(post_id)).first()
+        user = User.objects(id=ObjectId(post.user_id.id)).first()
+        post_data = {
+            'author':user.username,
+            'title':post.title,
+            'content': post.content,
+            'date_of_creation': post.date_of_creation,
+            'like_count':post.like_count,
+            'comment_count':post.comment_count,
+            'comments':post.comments,
+            'post_photo':post.post_photo,
+            'comments':post.comments,
+            'tags':post.tags      
+        }
+        return jsonify(post_data), 200
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'An error occurred'}), 500
+
 #get_posts_by_username 
 @post_bp.route('/user/<username>/posts', methods=['GET'])
 def get_user_posts_by_username(username):
@@ -160,7 +212,7 @@ def get_user_posts_by_username(username):
                     'title':post.title,
                     'content': post.content,
                     'created_at': post.date_of_creation,
-                    'likes_count':post.likes_count,
+                    'like_count':post.like_count,
                     'comment_count':post.comment_count,
                     'comments':post.comments              
                 }

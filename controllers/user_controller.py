@@ -185,7 +185,7 @@ def user_profile(user_id):
 
     if request.method == 'GET':
          # Return user profile data
-        posts = Post.objects(user_id=ObjectId(user.id))
+        posts = Post.objects(user_id=ObjectId(user.id),status="Posted")
 
         follower_list = []
         following_list = []
@@ -305,7 +305,7 @@ def get_current_user():
     jsontoken = request.json.get('access_token')
     data = decode_token(jsontoken)
     user = User.objects(id=data['sub']).first()
-    posts = Post.objects(user_id=user.id)
+    posts = Post.objects(user_id=user.id,status="Posted")
 
     if not user:
         return jsonify({'message': 'User not found'}), 404
