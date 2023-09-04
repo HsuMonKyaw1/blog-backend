@@ -37,9 +37,9 @@ class User(Document):
     }
 # Post model
 class Post(Document):
-    title=StringField(required=True,max_length=100)
-    content = StringField(required=True)
-    user_id= ReferenceField(User, required=True)
+    title=StringField(max_length=100)
+    content = StringField()
+    user_id= ReferenceField(User)
     date_of_creation= DateTimeField()
     post_photo = StringField()
     like_count = IntField(default=0)

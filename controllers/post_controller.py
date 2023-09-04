@@ -1,10 +1,11 @@
 from datetime import datetime,timezone
 from bson import ObjectId
-from flask import Blueprint, jsonify,request,session
+from flask import Blueprint, jsonify,request,session,json
 from models.mymodel import User,Post,Comment
 from auth import login_required
 import cloudinary
 import cloudinary.uploader
+from mongoengine.queryset.visitor import Q
 
 post_bp = Blueprint('post', __name__)
 
@@ -29,12 +30,14 @@ def create_post(user_id):
                 response = cloudinary.uploader.upload(post_photo)
                 url = response['secure_url']
                 post_photo= url
+            if tags:
+                tags = json.loads(tags)
 
         # Create a new post record in the database
-            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id,date_of_creation = datetime.now(timezone.utc),tags = tags) 
+            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id,date_of_creation = datetime.now(timezone.utc),tags = tags, status="Posted") 
             new_post.save()
         
-            return jsonify({'message': 'Post added successfully'}), 201
+            return jsonify({'message': 'Post published successfully'}), 201
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -147,13 +150,47 @@ def get_user_posts_by_uid(user_id):
         print(e)
         return jsonify({'message': 'An error occurred'}), 500
    
+# Get all post for feed
+@post_bp.route('/posts/feed/<user_id>/<sort_condition>', methods=['GET'])
+def get_user_posts_for_feed(user_id,sort_condition):
+    try:
+        user = User.objects.get(id=ObjectId(user_id))
+        if user:
+            post_list = []
+            following_list_id = []
+            followings= user.followings
+            for following in followings:
+                following_list_id.append(ObjectId(following.id))
+            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) & Q(user_id__ne = user.id) & Q(status="Posted")).order_by(sort_condition)
+            for post in posts:
+                post_data = {
+                    'id':str(post.id),
+                    'author':post.user_id.username,
+                    'title':post.title,
+                    'like_count':post.like_count,
+                    'comment_count':post.comment_count,
+                    'date_of_creation':post.date_of_creation,
+                    'post_photo':post.post_photo,
+                    'tags':post.tags,
+                    'status':post.status
+                }
+                post_list.append(post_data)
+            # posts = Post.objects(user_id=user.id,status='Posted')
+            return jsonify(post_list), 200
+        else:
+            return jsonify({'message': 'User not found'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'An error occurred'}), 500
+   
+
 #get_draft_posts
 @post_bp.route('/user/<user_id>/posts/draft', methods=['GET'])
 def get_user_posts_by_uid_draft(user_id):
     try:
         user = User.objects.get(id=ObjectId(user_id))
         if user:
-            posts = Post.objects(user_id=user.id,status='Draft')
+            posts = Post.objects(Q(user_id=user.id) & Q(status='Draft'))
 
             post_list = []
             for post in posts:
