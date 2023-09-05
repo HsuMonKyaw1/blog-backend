@@ -152,8 +152,8 @@ def get_user_posts_by_uid(user_id):
         return jsonify({'message': 'An error occurred'}), 500
    
 # Get all post for feed
-@post_bp.route('/posts/feed/<user_id>/<sort_condition>', methods=['GET'])
-def get_user_posts_for_feed(user_id,sort_condition):
+@post_bp.route('/posts/feed/<user_id>/<sort_condition>/<page_number>', methods=['GET'])
+def get_user_posts_for_feed(user_id,sort_condition,page_number):
     try:
         user = User.objects.get(id=ObjectId(user_id))
         if user:
@@ -162,7 +162,7 @@ def get_user_posts_for_feed(user_id,sort_condition):
             followings= user.followings
             for following in followings:
                 following_list_id.append(ObjectId(following.id))
-            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) | Q(user_id__ne = user.id) & Q(status="Posted")).order_by(sort_condition)
+            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) | Q(user_id__ne = user.id) & Q(status="Posted")).order_by(sort_condition).skip(int(page_number)*5).limit(5)
             for post in posts:
                 post_data = {
                     'id':str(post.id),

@@ -28,7 +28,7 @@ app = Flask(__name__)
 # app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
 app.config["JWT_SECRET_KEY"] = 'secret'
 jwt = JWTManager(app)
-# app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)
 Session(app)
 bcrypt = Bcrypt(app)
 cors= CORS(app, supports_credentials=True)
