@@ -19,21 +19,15 @@ def search_users():
                 'user_id': str(user.id),
                 'username': user.username,
                 'email':user.email,
+                'profile_info':{
+                   'profile_picture':user.profile_info.profile_picture
+                } 
             }
 
-            # Check if the user has a profile picture
-            if user.profile_info and user.profile_info.profile_picture:
-                user_info['profile_picture'] = user.profile_info.profile_picture
-            if user.profile_info and user.profile_info.cover_photo:
-                user_info['cover_photo'] = user.profile_info.cover_photo
-            if user.profile_info and user.profile_info.bio:
-                user_info['bio'] = user.profile_info.bio
-            if user.profile_info and user.profile_info.name:
-                user_info['name'] = user.profile_info.name
 
             user_data.append(user_info)
 
-        return jsonify({'users': user_data})
+        return jsonify(user_data)
 
     except Exception as e:
      return jsonify({'error': str(e)}), 500
@@ -46,7 +40,7 @@ def search_posts():
         search_term = request.args.get('q')
 
         # Perform a case-insensitive search for users by username
-        posts = Post.objects(title__icontains=search_term)
+        posts = Post.objects(title__icontains=search_term).order_by('date_of_creation').limit(10)
 
         # Create a list to store user data
         post_data = []
@@ -54,17 +48,20 @@ def search_posts():
             post_info = {
                'post_id': str(post.id),
                 'title': post.title,
-                'content': post.content,
+                'author' : post.user_id.username,
+                'post_photo':post.post_photo,
+                'date_of_creation':post.date_of_creation,
+                'tags':post.tags,
+                'like_count':post.like_count,
+                'comment_count':post.comment_count
             }
 
             # Check if the user has a profile picture
-            if post.post_photo:
-                post_info['post_photo'] = post.post_photo
           
 
             post_data.append(post_info)
 
-        return jsonify({'posts': post_data})
+        return jsonify(post_data)
 
     except Exception as e:
      return jsonify({'error': str(e)}), 500
