@@ -2,6 +2,7 @@ from datetime import datetime,timezone
 from bson import ObjectId
 from flask import Blueprint, jsonify,request,session,json
 from models.mymodel import User,Post,Comment
+from flask_jwt_extended import jwt_required,decode_token
 from auth import login_required
 import cloudinary
 import cloudinary.uploader
@@ -20,6 +21,7 @@ def create_post(user_id):
             title = request.form['title']
             content = request.form['content']
             tags = request.form.get('tags')
+            status = request.form.get('status')
              #   post_photo = request.files['post_photo']
             if request.form.get('post_photo') == '':
             # if request.files['cover_img'].filename == '':
@@ -34,7 +36,7 @@ def create_post(user_id):
                 tags = json.loads(tags)
 
         # Create a new post record in the database
-            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id,date_of_creation = datetime.now(timezone.utc),tags = tags, status="Posted") 
+            new_post = Post(title=title, content=content, post_photo=post_photo,user_id=user_id,date_of_creation = datetime.now(timezone.utc),tags = tags, status=status) 
             new_post.save()
         
             return jsonify({'message': 'Post published successfully'}), 201
@@ -44,44 +46,39 @@ def create_post(user_id):
 
 #post_delete
 @post_bp.route('/posts/<post_id>', methods=['DELETE'],endpoint='delete_post')
-@login_required
+@jwt_required()
 def delete_post(post_id):
     try:
-      post = Post.objects.get(id=post_id)
-      post_user_id=post.user_id
+        post = Post.objects.get(id=ObjectId(post_id))
+        post_user_id=post.user_id.id
       
-      user_id = session.get('user_id')
-      if user_id:
-          user=User.objects.get(id=user_id)
-       
-          if (user==post_user_id):
-              
+        jsontoken = request.json.get('access_token')
+        data = decode_token(jsontoken)
+        user = User.objects(id=data['sub']).first()
+        if user:
+          user=User.objects.get(id=ObjectId(user.id))
+          if (user.id==post_user_id):
               comments = Comment.objects(post=post)
               comments.delete()
               
               post.delete()
               return jsonify({'message': 'Post and associated comments are deleted successfully'})
           else:
-           return str(post_user_id), 403
-      else:
-         return jsonify({'error': 'Unauthorized to delete this comment'}), 403
+            return str(post_user_id), 403
+        else:
+            return jsonify({'error': 'Unauthorized to delete this comment'}), 403
     
     except Exception as e:
-        return jsonify({'error': str(user_id)}), 500
+        return jsonify({'error': e}), 500
     
 #post_update
 @post_bp.route('/update_post/<post_id>', methods=['PUT'],endpoint='update_post')
 def update_post(post_id):
     post = Post.objects.get(id=post_id)
-    # post_user_id=post.user_id
-      
-    # user_id = session.get('user_id')
-    # if user_id:
-    #     user=User.objects.get(id=user_id)
-       
-    #     if (user==post_user_id):
     title = request.form['title']
     content = request.form['content']
+    tags = request.form.get('tags')
+    status = request.form.get('status')
 
     if request.form.get('post_photo') == '':
         post_photo = None
@@ -97,10 +94,14 @@ def update_post(post_id):
         cover_response = cloudinary.uploader.upload(post_photo)
         url = cover_response['secure_url']
         post.post_photo = url
+    if tags:
+        post.tags = json.loads(tags)
+    if status:
+        post.status = status
+    post.date_of_creation = datetime.now(timezone.utc)
 
     post.save()
-
-    return jsonify("Updated successfully")
+    return jsonify({"message":"Post Updated Successfully"})
  
 
 #get_all_posts
@@ -161,7 +162,7 @@ def get_user_posts_for_feed(user_id,sort_condition):
             followings= user.followings
             for following in followings:
                 following_list_id.append(ObjectId(following.id))
-            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) & Q(user_id__ne = user.id) & Q(status="Posted")).order_by(sort_condition)
+            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) | Q(user_id__ne = user.id) & Q(status="Posted")).order_by(sort_condition)
             for post in posts:
                 post_data = {
                     'id':str(post.id),
