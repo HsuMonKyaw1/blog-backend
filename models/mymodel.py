@@ -38,14 +38,14 @@ class User(Document):
 # Post model
 class Post(Document):
     title=StringField(max_length=100)
-    content = StringField()
+    content = StringField(required=False)
     user_id= ReferenceField(User)
     date_of_creation= DateTimeField()
-    post_photo = StringField()
+    post_photo = StringField(required=False)
     like_count = IntField(default=0)
     comment_count = IntField(default=0)
     comments = ListField(ReferenceField('Comment'))
-    tags = ListField(IntField())
+    tags = ListField(IntField(default=[]))
     status=StringField(required=False)
     meta = {
         'collection':'posts' 
