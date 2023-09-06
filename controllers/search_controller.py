@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models.mymodel import User,Post
+from mongoengine.queryset.visitor import Q
+from bson import ObjectId
 
 search_bp = Blueprint('search', __name__)
 
@@ -38,9 +40,13 @@ def search_posts():
     try:
         # Get the search term from the query parameter
         search_term = request.args.get('q')
+        users = User.objects(username__icontains=search_term)
+        userIdList = []
+        for user in users:
+                userIdList.append(ObjectId(user.id))
 
         # Perform a case-insensitive search for users by username
-        posts = Post.objects(title__icontains=search_term).order_by('date_of_creation').limit(10)
+        posts = Post.objects(Q(user_id__in = userIdList) | Q(title__icontains=search_term)).order_by('date_of_creation').limit(10)
 
         # Create a list to store user data
         post_data = []
