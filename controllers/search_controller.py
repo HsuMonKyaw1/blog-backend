@@ -18,7 +18,7 @@ def search_users():
         user_data = []
         for user in users:
             user_info = {
-                'user_id': str(user.id),
+                'userId': str(user.id),
                 'username': user.username,
                 'email':user.email,
                 'profile_info':{

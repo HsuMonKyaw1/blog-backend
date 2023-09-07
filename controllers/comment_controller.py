@@ -1,12 +1,13 @@
 from datetime import datetime
 from flask import Blueprint,jsonify,request,session
+from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
 from models.mymodel import User,Post,Comment
 from auth import login_required
 comment_bp = Blueprint('comment', __name__)
 
 #comment_create
 @comment_bp.route('/comments', methods=['POST'])
-@login_required 
+@jwt_required
 def create_comment():
     try:
         data = request.get_json()
@@ -34,7 +35,7 @@ def create_comment():
 
 #comment_delete
 @comment_bp.route('/comments/<comment_id>', methods=['DELETE'], endpoint='delete_comment')
-@login_required
+@jwt_required
 def delete_comment(comment_id):
     try:
         data = request.json
@@ -59,7 +60,7 @@ def delete_comment(comment_id):
 
 #comment_update
 @comment_bp.route('/update_comment/<comment_id>', methods=['PUT'],endpoint='update_comment')
-@login_required
+@jwt_required
 def update_comment(comment_id):
     comment = Comment.objects.get(id=comment_id)
     comment_user_id=comment.user
