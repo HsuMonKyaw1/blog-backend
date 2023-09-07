@@ -2,6 +2,8 @@ import datetime
 from flask import Flask,Blueprint, abort, session,jsonify,request
 from models.mymodel import User
 from bson import json_util,ObjectId
+from controllers.noti_controller import create_notification
+
 follower_bp = Blueprint('follower', __name__)
 
 #follow user
@@ -24,6 +26,11 @@ def follow_user(user_id):
             user_to_follow.followerCount +=1
             user_to_follow.save()
             user.save()
+
+            # Notify the user_to_follow that they have been followed
+            notification_content = f'You have been followed by {user_id.username}.'
+            create_notification(user_id, notification_content)
+
             return jsonify({'message': f'You are now following {user_to_follow.username}'}), 200
         else:
             return jsonify({'message': f'You are already following {user_to_follow.username}'}), 400

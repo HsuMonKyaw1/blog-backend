@@ -3,6 +3,8 @@ from flask import Blueprint,jsonify,request,session
 from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
 from models.mymodel import User,Post,Comment
 from auth import login_required
+from controllers.noti_controller import create_notification
+
 comment_bp = Blueprint('comment', __name__)
 
 #comment_create
@@ -26,6 +28,12 @@ def create_comment():
                 date_of_creation=datetime.now()
             )
             new_comment.save()
+
+            # Notify the post owner that their post has been commented on
+            post_owner_id = post.user_id.id  # Get the user ID of the post owner
+            notification_content = f'Your post "{post.title}" has been commented on.'
+            create_notification(post_owner_id, notification_content)
+
             return jsonify({'message': 'Comment created successfully'}), 201
         else:
             return jsonify({'error': 'User not authenticated'}), 401

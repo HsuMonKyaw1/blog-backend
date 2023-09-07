@@ -7,6 +7,7 @@ from auth import login_required
 import cloudinary
 import cloudinary.uploader
 from mongoengine.queryset.visitor import Q
+from controllers.noti_controller import create_notification
 
 post_bp = Blueprint('post', __name__)
 
@@ -262,3 +263,30 @@ def get_user_posts_by_username(username):
     except Exception as e:
         print(e)
         return jsonify({'message': 'An error occurred'}), 500
+    
+@post_bp.route('/posts/<post_id>/like', methods=['POST'])
+def like_post(post_id):
+    try:
+         # Get the current user
+        username= request.json.get('username') 
+        user = User.objects(username=username).first()
+
+        post = Post.objects.get(id=post_id)
+
+        # Check if the user has already liked the post
+        if user.id in post.likes:
+            return jsonify({'error': 'User has already liked this post'}), 400
+
+        post.likes.append(user.id)
+        post.likes_count += 1
+        post.save()
+
+        # Notify the post owner that their post has been liked
+        post_owner_id = post.user_id.id  
+        notification_content = f'Your post "{post.title}" has been liked.'
+        create_notification(post_owner_id, notification_content)
+
+        return jsonify({'message': 'Post liked successfully'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
