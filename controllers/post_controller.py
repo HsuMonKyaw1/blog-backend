@@ -278,13 +278,12 @@ def like_post(post_id):
             return jsonify({'error': 'User has already liked this post'}), 400
 
         post.likes.append(user.id)
-        post.likes_count += 1
+        post.like_count += 1
         post.save()
 
-        # Notify the post owner that their post has been liked
-        post_owner_id = post.user_id.id  
-        notification_content = f'Your post "{post.title}" has been liked.'
-        create_notification(post_owner_id, notification_content)
+        # Create a notification
+        notification_content = f'You have been liked by {user.username}.'
+        create_notification(user.id, post.user_id, notification_content)
 
         return jsonify({'message': 'Post liked successfully'})
 

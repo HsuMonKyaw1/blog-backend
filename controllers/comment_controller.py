@@ -1,4 +1,5 @@
 from datetime import datetime
+from bson import ObjectId
 from flask import Blueprint,jsonify,request,session
 from flask_jwt_extended import create_access_token,unset_jwt_cookies,jwt_required,decode_token
 from models.mymodel import User,Post,Comment
@@ -9,36 +10,32 @@ comment_bp = Blueprint('comment', __name__)
 
 #comment_create
 @comment_bp.route('/comments', methods=['POST'])
-@jwt_required
+@login_required 
 def create_comment():
     try:
-        data = request.get_json()
-        post_id = data.get('post_id')
-        text = data.get('text')
+        # Get the current user
+        username= request.json.get('username') 
+        text = request.json.get('text')
+        user = User.objects(username=username).first()
+        if user:
+         user = User.objects.get(username=username)
+         post = Post.objects.get(id=post_id)
+         new_comment = Comment(
+            text=text,
+            user=user,
+            post=post,
+            date_of_creation=datetime.now()
+         )
+         new_comment.save()
 
-        post = Post.objects.get(id=post_id)
-        user_id = session.get('user_id')
+         # Notify the post owner that their post has been commented on
+         post_owner_id = post.user_id.id  # Get the user ID of the post owner
+         notification_content = f'Your post "{post.title}" has been commented by {user.username}.'
+         create_notification(user.id, post_owner_id, notification_content)
 
-        if user_id:
-            user = User.objects.get(id=user_id)
-            new_comment = Comment(
-                text=text,
-                user=user,
-                post=post,
-                date_of_creation=datetime.now()
-            )
-            new_comment.save()
-
-            # Notify the post owner that their post has been commented on
-            post_owner_id = post.user_id.id  # Get the user ID of the post owner
-            notification_content = f'Your post "{post.title}" has been commented on.'
-            create_notification(post_owner_id, notification_content)
-
-            return jsonify({'message': 'Comment created successfully'}), 201
-        else:
-            return jsonify({'error': 'User not authenticated'}), 401
-
+        return jsonify({'message': 'Comment created successfully'}), 201
     except Exception as e:
+   
         return jsonify({'error': str(e)}), 500
 
 #comment_delete

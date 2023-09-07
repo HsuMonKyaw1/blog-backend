@@ -71,9 +71,9 @@ class Comment(Document):
 class Notification(Document):
     sender = ReferenceField(User, required=True)  # Reference to the user who triggered the notification
     recipient = ReferenceField(User, required=True)  # Reference to the user who will receive the notification
-    content = StringField(required=True)  # Notification message or content
-    is_read = BooleanField(default=False)  # Flag to mark if the notification has been read
-    created_at = DateTimeField(default=datetime.utcnow)  # Timestamp when the notification was created
+    message = StringField(required=True)  
+    is_read = BooleanField(default=False) 
+    created_at = DateTimeField(default=datetime.utcnow) 
 
     meta = {
         'collection': 'notifications'
