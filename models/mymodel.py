@@ -1,6 +1,7 @@
+from datetime import datetime
 from flask import Flask
 from pymongo import MongoClient
-from mongoengine import GenericReferenceField,PULL,Document,ListField,StringField, EmailField, ReferenceField, DateTimeField,IntField,EmbeddedDocument,EmbeddedDocumentField
+from mongoengine import BooleanField,PULL,Document,ListField,StringField, EmailField, ReferenceField, DateTimeField,IntField,EmbeddedDocument,EmbeddedDocumentField
 
 app = Flask(__name__)
 
@@ -22,6 +23,8 @@ class User(Document):
     followerCount = IntField(default = 0)
     interests = ListField(IntField())
     bookmarks = ListField(StringField(max_length=24))
+    def __str__(self):
+        return self.username
     def get_profile_picture(self):
         return self.profile_info.profile_picture if self.profile_info else None
     def get_cover_photo(self):
@@ -43,6 +46,7 @@ class Post(Document):
     date_of_creation= DateTimeField()
     post_photo = StringField(required=False)
     like_count = IntField(default=0)
+    likes = ListField(ReferenceField(User))
     comment_count = IntField(default=0)
     comments = ListField(ReferenceField('Comment'))
     tags = ListField(IntField(default=[]))
@@ -63,4 +67,14 @@ class Comment(Document):
     date_of_creation= DateTimeField()
     meta = {
         'collection':'comments' 
+    }
+class Notification(Document):
+    sender = ReferenceField(User, required=True)  # Reference to the user who triggered the notification
+    recipient = ReferenceField(User, required=True)  # Reference to the user who will receive the notification
+    content = StringField(required=True)  # Notification message or content
+    is_read = BooleanField(default=False)  # Flag to mark if the notification has been read
+    created_at = DateTimeField(default=datetime.utcnow)  # Timestamp when the notification was created
+
+    meta = {
+        'collection': 'notifications'
     }
