@@ -169,6 +169,7 @@ def get_user_posts_for_feed(user_id,sort_condition,page_number):
                     'id':str(post.id),
                     'author':post.user_id.username,
                     'title':post.title,
+                    'uid':str(post.user_id.id),
                     'like_count':post.like_count,
                     'comment_count':post.comment_count,
                     'date_of_creation':post.date_of_creation,
@@ -221,6 +222,7 @@ def get_post_by_id(post_id):
         post = Post.objects(id=ObjectId(post_id)).first()
         user = User.objects(id=ObjectId(post.user_id.id)).first()
         post_data = {
+            'id':str(post.id),
             'author':user.username,
             'title':post.title,
             'content': post.content,
@@ -230,6 +232,7 @@ def get_post_by_id(post_id):
             'comments':post.comments,
             'post_photo':post.post_photo,
             'comments':post.comments,
+            'status':post.status,
             'tags':post.tags      
         }
         return jsonify(post_data), 200

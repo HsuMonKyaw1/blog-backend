@@ -22,7 +22,7 @@ class User(Document):
     followings = ListField(ReferenceField('self'))
     followerCount = IntField(default = 0)
     interests = ListField(IntField())
-    bookmarks = ListField(StringField(max_length=24))
+    bookmarks = ListField(StringField())
     def __str__(self):
         return self.username
     def get_profile_picture(self):

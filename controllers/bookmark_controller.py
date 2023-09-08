@@ -11,8 +11,6 @@ def bookmark_post(post_id):
      username= request.json.get('username') 
      user = User.objects(username=username).first()
      if user:
-            # Retrieve the current user
-        user = User.objects.get(username=username)
 
         # Check if the post is not already bookmarked
         if post_id not in user.bookmarks:
@@ -65,11 +63,16 @@ def view_bookmarks(user_id):
             post_data = {
                 'post_id': str(post.id),
                 'title': post.title,
-                'content': post.content,
+                'like_count':post.like_count,
+                'comment_count':post.comment_count,
+                'author':post.user_id.username,
+                'uid':str(post.user_id.id),
                 'post_photo':post.post_photo,
+                'date_of_creation':post.date_of_creation,
+                'tags':post.tags,
                 }
             bookmarked_posts_data.append(post_data)
-        return jsonify({'bookmarked_posts':bookmarked_posts_data})
+        return jsonify(bookmarked_posts_data)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -54,6 +54,7 @@ def search_posts():
             post_info = {
                'post_id': str(post.id),
                 'title': post.title,
+                'uid':str(post.user_id.id),
                 'author' : post.user_id.username,
                 'post_photo':post.post_photo,
                 'date_of_creation':post.date_of_creation,
