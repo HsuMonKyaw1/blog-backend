@@ -20,9 +20,10 @@ class User(Document):
     profile_info = EmbeddedDocumentField(ProfileInfo)
     followers = ListField(ReferenceField('self'))
     followings = ListField(ReferenceField('self'))
+    likes = ListField(ReferenceField('Post'),default=[])
     followerCount = IntField(default = 0)
     interests = ListField(IntField())
-    bookmarks = ListField(StringField())
+    bookmarks = ListField(StringField(),default=[])
     def __str__(self):
         return self.username
     def get_profile_picture(self):
@@ -46,9 +47,7 @@ class Post(Document):
     date_of_creation= DateTimeField()
     post_photo = StringField(required=False)
     like_count = IntField(default=0)
-    likes = ListField(ReferenceField(User))
     comment_count = IntField(default=0)
-    comments = ListField(ReferenceField('Comment'))
     tags = ListField(IntField(default=[]))
     status=StringField(required=False)
     meta = {
@@ -71,6 +70,7 @@ class Comment(Document):
 class Notification(Document):
     sender = ReferenceField(User, required=True)  # Reference to the user who triggered the notification
     recipient = ReferenceField(User, required=True)  # Reference to the user who will receive the notification
+    post = ReferenceField(Post, required = False)
     message = StringField(required=True)  
     is_read = BooleanField(default=False) 
     created_at = DateTimeField(default=datetime.utcnow) 

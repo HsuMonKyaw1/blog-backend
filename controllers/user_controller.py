@@ -130,6 +130,9 @@ def login():
     follower_list = []
     following_list = []
     post_list = []
+    like_list = []
+    for i in user.likes:
+        like_list.append(str(Post.objects(id=i.id).first().id))
     for i in user.followers:
         follower_list.append(str(User.objects(id=i.id).first().id))
     for i in user.followings:
@@ -157,7 +160,8 @@ def login():
             "followers":follower_list,
             "followings":following_list,
             "bookmarks":user.bookmarks,
-            "posts":post_list
+            "posts":post_list,
+            "likes":like_list
     }
         access_token = create_access_token(identity=str(user.id))
         response = {"access_token" : access_token,"message":"Login Successful","user":user_data}
@@ -313,6 +317,9 @@ def get_current_user():
     follower_list = []
     following_list = []
     post_list = []
+    like_list = []
+    for i in user.likes:
+        like_list.append(str(Post.objects(id=i.id).first().id))
     for i in user.followers:
         follower_list.append(str(User.objects(id=i.id).first().id))
     for i in user.followings:
@@ -337,7 +344,8 @@ def get_current_user():
             "followers":follower_list,
             "followings":following_list,
             "bookmarks":user.bookmarks,
-            "posts":post_list
+            "posts":post_list,
+            "likes":like_list
     }
     # response.headers.add('Access-Control-Allow-Credentials', '*')
     return jsonify(response)

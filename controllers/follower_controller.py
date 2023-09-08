@@ -27,13 +27,9 @@ def follow_user(user_id):
             user_to_follow.save()
             user.save()
 
-            # Notify the user_to_follow that they have been followed
-            sender = User.objects.get(id=user_id)
-            recipient = User.objects.get(id=user_to_follow.id)
-
             # Create a notification
-            notification_content = f'You have been followed by {sender.username}.'
-            create_notification(sender.id, recipient.id, notification_content)
+            notification_content = f'You have been followed by {user.username}.'
+            create_notification(user.id, user_to_follow.id,None,notification_content)
             
 
             return jsonify({'message': f'You are now following {user_to_follow.username}'}), 200

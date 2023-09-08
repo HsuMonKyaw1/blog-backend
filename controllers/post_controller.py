@@ -229,16 +229,14 @@ def get_post_by_id(post_id):
             'date_of_creation': post.date_of_creation,
             'like_count':post.like_count,
             'comment_count':post.comment_count,
-            'comments':post.comments,
             'post_photo':post.post_photo,
-            'comments':post.comments,
             'status':post.status,
             'tags':post.tags      
         }
         return jsonify(post_data), 200
     except Exception as e:
         print(e)
-        return jsonify({'message': 'An error occurred'}), 500
+        return jsonify({'message': str(e)}), 500
 
 #get_posts_by_username 
 @post_bp.route('/user/<username>/posts', methods=['GET'])
@@ -254,9 +252,7 @@ def get_user_posts_by_username(username):
                     'title':post.title,
                     'content': post.content,
                     'created_at': post.date_of_creation,
-                    'like_count':post.like_count,
-                    'comment_count':post.comment_count,
-                    'comments':post.comments              
+                    'like_count':post.like_count,             
                 }
                 post_list.append(post_data)
 
@@ -274,21 +270,45 @@ def like_post(post_id):
         username= request.json.get('username') 
         user = User.objects(username=username).first()
 
-        post = Post.objects.get(id=post_id)
+        post = Post.objects.get(id=str(post_id))
 
         # Check if the user has already liked the post
-        if user.id in post.likes:
+        if post.id in user.likes:
             return jsonify({'error': 'User has already liked this post'}), 400
 
-        post.likes.append(user.id)
+        user.likes.append(post.id)
         post.like_count += 1
         post.save()
+        user.save()
 
         # Create a notification
-        notification_content = f'You have been liked by {user.username}.'
-        create_notification(user.id, post.user_id, notification_content)
+        notification_content = f'Your post have been liked by {user.username}.'
+        create_notification(user.id, post.user_id,post.id,notification_content)
 
-        return jsonify({'message': 'Post liked successfully'})
+        return jsonify({'message': 'You liked the post'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@post_bp.route('/posts/<post_id>/unlike', methods=['POST'])
+def unlike_post(post_id):
+    try:
+         # Get the current user
+        username= request.json.get('username') 
+        user = User.objects(username=username).first()
+
+        post = Post.objects.get(id=ObjectId(post_id))
+
+        # Check if the user has already liked the post
+        if post.id in user.likes:
+            return jsonify({'error': 'User has already liked this post'}), 400
+
+        user.likes.remove(post)
+        post.like_count -= 1
+        post.save()
+        user.save()
+
+        return jsonify({'message': 'You unliked the post'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

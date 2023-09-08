@@ -5,20 +5,17 @@ from models.mymodel import User
 
 noti_bp = Blueprint('noti', __name__)
 
-def create_notification(sender, recipient, message):
+def create_notification(sender, recipient,post, message):
     try:
         notification = Notification(
             sender=sender,  
             recipient=recipient,
+            post=post,
             message=message,
             is_read=False, 
             created_at=datetime.utcnow()  
         )
         notification.save() 
-        # Append the notification ID to the recipient's notifications array
-        # recipient = User.objects.get(id=recipient)
-        # recipient.notifications.append(notification.id)
-        # recipient.save()
         
         return jsonify({'message': 'Notification created successfully'}), 201
 
@@ -49,22 +46,24 @@ def view_notification(notification_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    
-@noti_bp.route('/notifications/<user_id>', methods=['GET'])
+@noti_bp.route('/notifications_user/<user_id>', methods=['GET'])
 def view_notifications(user_id):
     try:
         # Retrieve all notifications for the specified user
-        notifications = Notification.objects(recipient=user_id).order_by('-created_at')
+        notifications = Notification.objects(recipient=user_id).order_by('is_read','-created_at')
 
         # Prepare the notification data for response
         notification_list = []
         for notification in notifications:
             notification_data = {
                 'id': str(notification.id),
-                'sender': str(notification.sender),  
+                'sender': str(notification.sender.id),
+                'post':str(notification.post.id) if notification.post else None, 
                 'message': notification.message,
                 'is_read': notification.is_read,
-                'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                'created_at': notification.created_at,
+                'profile_photo':notification.sender.profile_info.profile_picture,
+                'post_photo':notification.post.post_photo if notification.post else None
             }
             notification_list.append(notification_data)
             
