@@ -147,7 +147,7 @@ def login():
             post_data ={
             'id': str(post.id)
         }
-        post_list.append(post_data)
+            post_list.append(post_data)
         user_data = {
         'id': str(user.id),
             'username': user.username,
