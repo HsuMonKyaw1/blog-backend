@@ -45,12 +45,12 @@ def index():
 def suggestedUser():
     users = User.objects.order_by('-followerCount', '+username').limit(10)
     user_list = []
-    print(len(users))
+    # print(len(users))
    
     for user in users:
         follower_list = []
         for i in user.followers:
-            print('followers:',user,str(User.objects(id=ObjectId(i.id)).first()))
+            # print('followers:',user,str(User.objects(id=ObjectId(i.id)).first()))
             follower_list.append(str(User.objects(id=ObjectId(i.id)).first().id))
         user_data = {
             'id': str(user.id),
