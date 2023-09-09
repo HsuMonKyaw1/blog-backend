@@ -127,27 +127,27 @@ def login():
 
     # Find the user by username and check the password
     user = User.objects(username=username).first()
-    posts = Post.objects(user_id=user.id)
     # user.pop('_id')
     follower_list = []
     following_list = []
     post_list = []
     like_list = []
-    for i in user.likes:
-        like_list.append(str(Post.objects(id=i.id).first().id))
-    for i in user.followers:
-        follower_list.append(str(User.objects(id=i.id).first().id))
-    for i in user.followings:
-        following_list.append(str(User.objects(id=i.id).first().id))
-    for post in posts:
-        post_data ={
-            'id': str(post.id)
-        }
-        post_list.append(post_data)
 
     if user and bcrypt.checkpw(password.encode('utf-8'),user.password.encode('utf-8')):
         # Store user information in the session to mark them as authenticated
         #  session['user_id'] =str(user.id) 
+        posts = Post.objects(user_id=user.id)
+        for i in user.likes:
+            like_list.append(str(Post.objects(id=i.id).first().id))
+        for i in user.followers:
+            follower_list.append(str(User.objects(id=i.id).first().id))
+        for i in user.followings:
+            following_list.append(str(User.objects(id=i.id).first().id))
+        for post in posts:
+            post_data ={
+            'id': str(post.id)
+        }
+        post_list.append(post_data)
         user_data = {
         'id': str(user.id),
             'username': user.username,
