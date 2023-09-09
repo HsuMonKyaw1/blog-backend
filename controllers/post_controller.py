@@ -226,6 +226,7 @@ def get_post_by_id(post_id):
             'id':str(post.id),
             'author':user.username,
             'title':post.title,
+            'uid':str(user.id),
             'content': post.content,
             'date_of_creation': post.date_of_creation,
             'like_count':post.like_count,
