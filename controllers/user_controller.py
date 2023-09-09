@@ -231,6 +231,14 @@ def user_profile(user_id):
         bio = request.form.get('bio')
         name = request.form.get('name')
         interests = request.form.get('interests')
+        existing_username = User.objects(username=username)
+        if existing_username:
+            return jsonify({'message': 'Username is already in use'}), 409
+
+    # Check if the email is already in use
+        existing_email = User.objects(email=email)
+        if existing_email:
+            return jsonify({'message': 'Email is already in use'}), 409
         if request.form.get('profile_img') == '':
             # if request.files['profile_img'].filename == '':
                 profile_pic = None
