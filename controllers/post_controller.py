@@ -141,7 +141,8 @@ def get_user_posts_by_uid(user_id):
                     'date_of_creation':post.date_of_creation,
                     'post_photo':post.post_photo,
                     'tags':post.tags,
-                    'status':post.status
+                    'status':post.status,
+                    'author':post.user_id.username,
                 }
                 post_list.append(post_data)
 
