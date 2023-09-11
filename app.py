@@ -1,4 +1,4 @@
-from flask import Flask,request,jsonify
+from flask import Flask,request,jsonify,abort
 from flask_session import Session
 from mongoengine import connect
 from pymongo import MongoClient
@@ -34,12 +34,14 @@ from mongoengine.queryset.base import BaseQuerySet
 #         "http://127.0.0.1:3000",
 #       ];
 
-origin = []
-if(os.getenv('environment') == "development"):
-    origin = ['http://localhost:3000','http://localhost:5000']
+# origin = []
+# if(os.getenv('environment') == "development"):
+#     origin = ['http://localhost:3000','http://localhost:5000']
 
-else:
-    origin = ["https://leaflet-uit.netlify.app", "http://leaflet-uit.netlify.app"]
+# else:
+#     origin = ["https://leaflet-uit.netlify.app", "http://leaflet-uit.netlify.app"]
+
+
     
 
 app = Flask(__name__)
@@ -49,8 +51,14 @@ jwt = JWTManager(app)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)
 Session(app)
 bcrypt = Bcrypt(app)
-cors= CORS(app, supports_credentials=True,resources={r"/*": {"origins": origin}})
+cors= CORS(app, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type','Authorization','Access-Control-Allow-Credentials'
+
+
+@app.before_request
+def limit_remote_addr():
+    if os.getenv('environment') == "production" and request.remote_addr != 'https://leaflet-uit.netlify.app/':
+        abort(403)  # Forbidden
 
 app.config['MONGODB_SETTINGS'] = {
     'db': 'social_platform',
