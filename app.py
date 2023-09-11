@@ -24,6 +24,11 @@ from mongoengine.queryset.base import BaseQuerySet
 #             return json_util._json_convert(obj.as_pymongo())
 #         return JSONEncoder.default(self, obj)
 
+if os.getenv("environment") == 'developement':
+    origin = ["localhost:3000","localhost:5000","127.0.0.1"]
+else:
+    origin = "https://leaflet-uit.netlify.app/"
+
 app = Flask(__name__)
 # app.secret_key = 'fe5923c7a4782927f60de714f7fed01ded1cec5656fc1e5c'
 app.config["JWT_SECRET_KEY"] = 'secret'
@@ -31,7 +36,7 @@ jwt = JWTManager(app)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)
 Session(app)
 bcrypt = Bcrypt(app)
-cors= CORS(app, supports_credentials=True)
+cors= CORS(app, supports_credentials=True,origins=origin)
 app.config['CORS_HEADERS'] = 'Content-Type','Authorization','Access-Control-Allow-Credentials'
 
 app.config['MONGODB_SETTINGS'] = {
