@@ -164,7 +164,7 @@ def get_user_posts_for_feed(user_id,sort_condition,page_number):
             followings= user.followings
             for following in followings:
                 following_list_id.append(ObjectId(following.id))
-            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) | Q(user_id__ne = user.id) & Q(status="Posted")).order_by(sort_condition).skip(int(page_number)*5).limit(5)
+            posts = Post.objects( (Q(user_id__in = following_list_id) | Q(tags__exists = user.interests)) & (Q(status="Posted"))).order_by(sort_condition).skip(int(page_number)*5).limit(5)
             for post in posts:
                 post_data = {
                     'id':str(post.id),
